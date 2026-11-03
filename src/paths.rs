@@ -208,6 +208,8 @@ pub fn prepopulate_user_data_dir() {
         return;
     }
 
+    #[cfg(not(target_os = "ios"))]
+    {
     let apps_dir = base_path.join(APPS_DIR);
     if !apps_dir.is_dir() {
         match std::fs::create_dir(&apps_dir) {
@@ -218,6 +220,8 @@ pub fn prepopulate_user_data_dir() {
                 log!("Warning: Couldn't create {}: {}", apps_dir.display(), e);
             }
         }
+    }
+
     }
 
     let sqlite_dir = base_path.join(SQLITE_DIR);
@@ -232,6 +236,10 @@ pub fn prepopulate_user_data_dir() {
         }
     }
 
+    // iOS has its own mobile setup; never bootstrap desktop profiles or picker files.
+    #[cfg(not(target_os = "ios"))]
+    {
+    let apps_dir = base_path.join(APPS_DIR);
     fn create_file(path: &Path, content: &str) {
         match std::fs::write(path, content) {
             Ok(()) => {
@@ -261,5 +269,6 @@ pub fn prepopulate_user_data_dir() {
     let options_help = base_path.join("OPTIONS_HELP.txt");
     if !options_help.is_file() {
         create_file(&options_help, crate::options::OPTIONS_HELP);
+    }
     }
 }

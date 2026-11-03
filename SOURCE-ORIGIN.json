@@ -1,6 +1,6 @@
 {
   "source_tree": "E:\\CodexProjects\\DeadSpaceLegacy\\work\\HyperHLE_ds_compat-ios-android-base-20261103",
-  "source_head": "432c442704cf1ed807828986ea4bfd841ea4a2d3",
+  "source_head": "ab82323bee2802e6216089c885d5a128ad533444",
   "baseline_platform": "android",
   "android_baseline_commit": "9cb5f50775a590c639aabf47907845f06b300e88",
   "cpu_implementation_commit": "315ef93eb37d975869bb8bd92a66735eb9742aa1",
@@ -8,7 +8,7 @@
   "contains_game_ipa": false,
   "contains_user_options": false,
   "files": 722,
-  "bytes": 63662925,
+  "bytes": 63663152,
   "sha256": {
     ".github/workflows/ios-host.yml": "67b86a0085300d12c77050b128a1ac0aecae4e663912c1024ff9d59b45254c5c",
     ".gitignore": "f33dc2210e4b6abb82ce107f72c03dfdfc477d9c9269f1dcc2bf4edb1d1fe260",
@@ -516,7 +516,7 @@
     "src/objc/synchronization.rs": "7d5507be8458f6f1a4491595ffd408151faa83d18b46ae4fb50bbe14406ae73a",
     "src/objc/weak.rs": "b7c4837062b900b7257d81f953677f4aa47130a951ea7e7578fd039f133bade1",
     "src/options.rs": "209dfa262eba19faed3dd42bfe533f5daadb667c02d4337fb81543d8d1bdbdb0",
-    "src/paths.rs": "cb2be920cf5872fc39cf48d02a8e3b39aed62d649db35b3115df0239429ec9ec",
+    "src/paths.rs": "8d371a8bb856fcc1fba0aa967d7dfd90b2ae9527449de5db9f22646e8659a96b",
     "src/stack.rs": "003c7f586cab2ed9373ef19500ca11507da41a99d15f756e101033dabb7f8f94",
     "src/version/Cargo.toml": "bcda3d2bf7dd636fa6d41b8ba57506f9c42fcdcf37a59f3dbde3bdfb78c0f154",
     "src/version/bin.rs": "796a92673713d9a2d21b4b6f31c40b09086b89519622ee28a0c176638170edc4",
