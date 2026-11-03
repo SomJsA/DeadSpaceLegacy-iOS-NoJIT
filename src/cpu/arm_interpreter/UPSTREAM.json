@@ -1,0 +1,143 @@
+{
+  "repository": "https://github.com/moleworld-dev/touchhle-arm-interpreter",
+  "commit": "c3df30cc84f64c618f0fef234b1792c8d2bafa8a",
+  "license": "MPL-2.0",
+  "upstream_sha256": {
+    "src/interpreter/mod.rs": "1efe17eb09e0085edde93e55a78ae88eb94471c69daab2b45be96fcc903f5531",
+    "src/interpreter/arm.rs": "4509bcb4484e3d633bce742672d1ec674038b0e15028ef8e2c281c21f8d0663b",
+    "src/interpreter/thumb16.rs": "0b9baeed9b16ad6f33f1f98221642262f1eef819da6e256b850acf4c268e021c",
+    "src/interpreter/thumb32.rs": "981a60b62a86f60605ef92bf3a295496efe15bd7471ff967994c28bfc036158a",
+    "src/interpreter/vfp.rs": "a67982acc0b9029c3764ee2c567a5f48307360ab14bc50ebf73ff8ba9c5229a7",
+    "src/mem.rs": "464291d043b84fd31fe333e1b676a4d577d5588891198ff85a70c6a9432a12eb"
+  },
+  "provenance_note": "Candidate describes its code as derived from touchHLE; original lineage has not been independently reconstructed.",
+  "local_changes": [
+    "Use actual generic GuestMem parameters throughout all instruction decoders.",
+    "Remove the candidate default allocator and unsafe Send assertion; memory is owned by the host.",
+    "Remove game-specific fast paths, PC guards, debug logging and unavailable differential harness.",
+    "Remove tests tied to the missing upstream differential harness; add portable behavior tests separately.",
+    "Preserve MPL headers and instruction decoder logic for initial testing; later fixes must have dedicated evidence."
+  ],
+  "validated_local_fixes": [
+    "Zero tick budget executes no instruction.",
+    "A32 LDREX/STREX byte/halfword/word/doubleword decoding, bounded memory transfers and CLREX.",
+    "Track reservation transfer width and clear it on guest context switches.",
+    "Distinct unsupported decoder faults with PC/encoding; cannot enter legacy UDF bypass.",
+    "A32/Thumb status-register transfers and A32 breakpoint support; unknown T32 system encodings are rejected.",
+    "Respect host data null-access policy while preserving instruction-fetch null protection; strict and legacy fixtures covered.",
+    "Normalize A32/T32 NEON logic prefixes, decode all eight U/op variants, and reject odd Q register encodings; 768 register/alias comparisons against Dynarmic.",
+    "A32 SMMUL/SMMLA/SMMLS, including rounded forms, wrapping accumulation and register aliases; ARM and existing Thumb paths checked against boundary-value oracle and Dynarmic.",
+    "A32/T32 NEON VMUL/VMLA/VMLS by scalar for integer16/32 and finite F32 inputs; snapshot aliased scalar/vector sources, distinguish Q bit location, reject invalid sizes and odd Q registers. 3456 independent oracle and Dynarmic samples. NaN/subnormal/exception/rounding completeness is not established.",
+    "A32 MLS with wrapping subtraction, preserved status flags and overlapping operands; 1176 ARM/Thumb boundary cases and 512 randomized backend comparisons.",
+    "Validate VFP/NEON register-list ranges and forbidden writeback before transfer. Preserve legal A32 PC-relative lists. Eight rejection cases have no data/register side effects; five legal edge cases match Dynarmic. Same 416303-word syntactic corpus changes 84 distinct panic encodings to unsupported faults, with no remaining Rust panic in that corpus.",
+    "A32 signed/unsigned byte/halfword/byte-pair extensions and optional accumulated aliases, including four rotations and independent halfword wrapping. 6048 ARM/Thumb edge cases and 9216 randomized full-state Dynarmic comparisons.",
+    "A32/T32 vector F32 VMLA/VMLS (non-fused), exact F32 matching, odd Q register rejection and VMIN/VMAX signed-zero rules. 5376 finite input, independent register-bank and alias samples against Dynarmic; NaN, subnormal, exception flags and complete rounding behavior remain unverified.",
+    "A32/T32 VDUP scalar for every 8/16/32-bit lane index, D0-D31 sources, D/Q destinations and source overlap with either Q half; invalid widths and odd Q destination rejected. 4032 independent oracle and Dynarmic comparisons.",
+    "A32 SMULxy/SMLAxy/SMLALxy/SMULWy/SMLAWy with signed operands, 64-bit wraparound, aliases and sticky Q. Prevent S=0 miscellaneous encodings from being silently treated as TST/TEQ/CMP/CMN. 14112 edge cases and 6144 randomized Dynarmic comparisons.",
+    "A32/T32 VLD1-4/VST1-4 single-element structure transfers, 8/16/32-bit lane preservation, register stride, aliases and writeback. 4736 independent-oracle and Dynarmic cases; reserved alignment and register overflow rejected before transfer. Runtime alignment faults and all-lanes group remain unimplemented."
+  ],
+  "instruction_references": [
+    {
+      "title": "Arm Compiler Assembler Reference: SMMUL, SMMLA, SMMLS",
+      "url": "https://support.arm.com/documentation/dui0489/e/arm-and-thumb-instructions/multiply-instructions/smmul--smmla--and-smmls"
+    },
+    {
+      "path": "vendor/dynarmic/src/dynarmic/frontend/A32/decoder/arm.inc",
+      "note": "Pinned decoder and multiply.cpp used to cross-check instruction field positions and ordering."
+    },
+    {
+      "title": "ARMv7-A/R Advanced SIMD multiply instructions",
+      "url": "https://support.arm.com/documentation/ddi0406/b/Application-Level-Architecture/The-Instruction-Sets/Advanced-SIMD-data-processing-operations/Advanced-SIMD-multiply-instructions",
+      "implementation_cross_check": "vendor/dynarmic/src/dynarmic/frontend/A32/translate/impl/asimd_two_regs_scalar.cpp"
+    },
+    {
+      "path": "vendor/dynarmic/src/dynarmic/frontend/A32/translate/impl/asimd_load_store_structures.cpp",
+      "note": "Pinned v8_VLD_single/v8_VST_single field mapping and validity constraints; alignment TODO remains explicit."
+    }
+  ],
+  "observed_guest_failures": [
+    {
+      "guest_ipa_sha256": "1381cbd7de15bcaf8085edf8f191cc54261c00376087d4893ac62fb9b9f2da1c",
+      "pc": "0x003adf7c",
+      "encoding": "0xf2200110",
+      "instruction": "VORR d0,d0,d0",
+      "evidence": "guest-boot-001/result.json"
+    },
+    {
+      "pc": "0x0038f8d8",
+      "encoding": "0xe751f110",
+      "instruction": "SMMUL r1,r0,r1",
+      "evidence": "guest-boot-002/result.json"
+    },
+    {
+      "pc": "0x0051b47c",
+      "encoding": "0xf3e089c0",
+      "instruction": "VMUL.F32 q12,q8,d0[0]",
+      "evidence": "guest-boot-003/result.json"
+    },
+    {
+      "pc": "0x00802228",
+      "encoding": "0xe0600291",
+      "instruction": "MLS r0,r1,r2,r0",
+      "evidence": "guest-boot-004/result.json"
+    },
+    {
+      "pc": "0x005368b4",
+      "encoding": "0xe6cf2073",
+      "instruction": "UXTB16 r2,r3",
+      "evidence": "guest-boot-005/result.json"
+    },
+    {
+      "pc": "0x00528bfc",
+      "encoding": "0xf2084d5c",
+      "instruction": "VMLA.F32 q2,q4,q6",
+      "evidence": "guest-boot-006/result.json"
+    },
+    {
+      "pc": "0x0052a2b8",
+      "encoding": "0xf3b44c04",
+      "instruction": "VDUP.32 d4,d4[0]",
+      "evidence": "guest-boot-007/result.json"
+    },
+    {
+      "kind": "MemoryError",
+      "pc": null,
+      "encoding": null,
+      "instruction": null,
+      "evidence": "guest-boot-008/result.json",
+      "status": "unresolved; diagnostic build pending"
+    },
+    {
+      "record": "guest-scene-001/result.json",
+      "action": "one emulator-only confirm after logged page 7",
+      "action_native_log": "[DSfrontendInput] native page=7 BTN_OK",
+      "pc": "0x0037fc04",
+      "encoding": "0xf4ab280f",
+      "instruction": "VLD1.32 {d2[0]},[fp]",
+      "gameplay_verified": false,
+      "input_unchanged": true,
+      "action_record_note": "Original acknowledged_by_guest=false is a request-time placeholder; actual log confirms native BTN_OK. Historical result preserved."
+    }
+  ],
+  "diagnostics": {
+    "last_fault": "Instruction location is recorded only when an error occurs; cleared once per nonempty run, retained for a zero budget. Not serialized as guest context.",
+    "memory_error_logging": "Failing guest access address/count/direction plus instruction location, bounded PC/LR windows and post-instruction register state are logged before the legacy panic path.",
+    "verified_tests": "fault-details-core.log; 41 standalone cases passed",
+    "guest_memory_error_fixed": "Null fetch symptom absent in two fresh 90s menu probes after halfword multiply fix; specific dynamic cause not traced; Windows secondary panic unwind failure remains unresolved."
+  },
+  "silent_decode_findings": [
+    {
+      "kind": "silent decoder mismatch",
+      "pc": "0x0051ce64",
+      "encoding": "0xe1600382",
+      "instruction": "SMULBB r0,r2,r3",
+      "source_context": "Static instruction inside Loader::LoadVertexArray before the null virtual call; this specific dynamic path was not yet traced.",
+      "before_test": "halfword-multiply-before.log; SMUL returned Normal with wrong state, misc S=0 space returned Normal",
+      "after_tests": [
+        "halfword-multiply-final.log",
+        "halfword-multiply-all-lib.log"
+      ],
+      "causal_connection_to_memory_error_verified": false
+    }
+  ]
+}

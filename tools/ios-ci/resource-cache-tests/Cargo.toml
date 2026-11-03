@@ -1,0 +1,10 @@
+[package]
+name="ds-ios-resource-cache-tests"
+version="0.1.0"
+edition="2021"
+[workspace]
+[lib]
+path="../../../src/host_resource_cache.rs"
+[dependencies]
+sha2="=0.10.9"
+zip={version="=0.6.6",default-features=false,features=["deflate"]}
