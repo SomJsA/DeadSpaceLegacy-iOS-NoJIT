@@ -1,6 +1,6 @@
 {
   "source_tree": "E:\\CodexProjects\\DeadSpaceLegacy\\work\\HyperHLE_ds_compat-ios-android-base-20261103",
-  "source_head": "8f11ed7688c429e2892c7758e6f504cd32b3be50",
+  "source_head": "26c8c4dd559b28fdf7d3aa622f17f98b1f38a277",
   "baseline_platform": "android",
   "android_baseline_commit": "9cb5f50775a590c639aabf47907845f06b300e88",
   "cpu_implementation_commit": "315ef93eb37d975869bb8bd92a66735eb9742aa1",
@@ -8,7 +8,7 @@
   "contains_game_ipa": false,
   "contains_user_options": false,
   "files": 725,
-  "bytes": 63682801,
+  "bytes": 63685876,
   "sha256": {
     ".github/workflows/ios-host.yml": "9910153f503cc4dcf358fea790b056fedc8a87e3ec352fc845afc44bc3449fca",
     ".gitignore": "f33dc2210e4b6abb82ce107f72c03dfdfc477d9c9269f1dcc2bf4edb1d1fe260",
@@ -734,7 +734,7 @@
     "vendor/PVRTDecompress/README.md": "d3364829e27c2200320af3e99aaf9b61ce20f5a68763e8dafae932ac2da393cd",
     "tools/ios-ci/setup_image_qa.py": "ed6c65e191cd32aafe3634a924de5b60bef68bb764860c22666a6dfffcf378bd",
     "tools/ios-ci/review_existing.py": "2468120387c9399c923c554fc6066ad44e00d555cad2fcf91056088d1fb70823",
-    "tools/ios-ci/simulator_game.py": "7ab567224aed30584d42abe2a38bf58e58210e7c938ac06a1ef26f4f542b5f78"
+    "tools/ios-ci/simulator_game.py": "cf18ff12784d6b297ddb1063213453880281f3a25ab5341b07b7f75d211be52f"
   },
   "native_artifact_source_commit": "ab82323bee2802e6216089c885d5a128ad533444",
   "validation_only_change": true

@@ -44,7 +44,23 @@ def valid_command(text):
     except ValueError:return False
 
 record={'schema':1,'native_build_run':RUN,'native_source_commit':'ab82323bee2802e6216089c885d5a128ad533444','baseline':'android 9cb5f507','native_code_rebuilt':False,'game_present':False,'original_game_test':True,'test_scope':'startup, main menu and first controllable scene; not whole-game acceptance','physical_device_acceptance':False,'session':TAG,'phase':'preparing','observed_stage':'starting','last_control_sequence':0,'last_guest_sequence':0,'errors':[]}
-udid=None;container=None;log=None;inbox=None;started=time.time();snapshot=0;pid=None
+udid=None;container=None;log=None;inbox=None;started=time.time();snapshot=0;pid=None;log_offset=0;dump_dir=None
+record['profile']='android-default';record['input_ready']=False
+def new_log():
+    global log_offset
+    if not log or not log.is_file():return ''
+    with log.open('rb') as stream:
+        stream.seek(log_offset);data=stream.read(4*1024*1024);log_offset=stream.tell()
+    return data.decode('utf-8',errors='replace')
+def launch_profile(name):
+    global pid
+    assert name in ['android-default','direct-present']
+    options='--trace-gl-errors'+(' --fast-present' if name=='direct-present' else '')
+    (container/'Documents/touchHLE_options.txt').write_text('# Isolated graphics diagnostic only\ncom.ea.deadspace.bv: '+options+'\n',encoding='utf-8')
+    record['profile']=name;record['input_ready']=False
+    launched=sim('launch',udid,BUNDLE);record['launch']=launched
+    try:pid=int(launched.rsplit(':',1)[1].strip())
+    except (ValueError,IndexError):pid=None
 def atomic_json(path,obj):
     part=path.with_suffix(path.suffix+'.partial');part.write_text(json.dumps(obj,indent=2)+'\n',encoding='utf-8');os.replace(part,path)
 def publish(label):
@@ -55,6 +71,19 @@ def publish(label):
     with Image.open(png) as im:
         im=im.convert('RGB');im.thumbnail((1568,1568));im.save(jpg,quality=80)
         if jpg.stat().st_size>350000:im.thumbnail((1200,1200));im.save(jpg,quality=70)
+    optional=[]
+    if dump_dir:
+        dumps=sorted(dump_dir.glob('*.ppm'),key=lambda p:p.stat().st_mtime)
+        if dumps:
+            latest=dumps[-1]
+            with Image.open(latest) as image:
+                rgb=image.convert('RGB');sample=rgb.copy();sample.thumbnail((96,96));values=list(sample.getdata())
+                stats={'source':latest.name,'profile':record['profile'],'size':rgb.size,'nonblack_fraction':sum(max(p)>8 for p in values)/len(values),'distinct_sample_colors':len(set(values)),'source_sha256':sha(latest)}
+                rgb.thumbnail((1568,1568));rgb.save(OUT/'drawable-preview.jpg',quality=80)
+            atomic_json(OUT/'drawable-stats.json',stats);record['drawable']=stats
+            optional=[OUT/'drawable-preview.jpg',OUT/'drawable-stats.json']
+            for old in dumps[:-2]:
+                assert old.resolve().parent==dump_dir.resolve();old.unlink()
     record.update(snapshot=snapshot,label=label,wall_seconds=round(time.time()-started,2),screenshot_sha256=sha(png),preview_sha256=sha(jpg),preview_bytes=jpg.stat().st_size,log_bytes=log.stat().st_size if log and log.is_file() else 0)
     processes=sim('spawn',udid,'launchctl','list',timeout=20)
     record['process_alive']=any(BUNDLE in line and line.split()[0].isdigit() for line in processes.splitlines() if line.split())
@@ -65,7 +94,7 @@ def publish(label):
     atomic_json(OUT/'game-status.json',record)
     evidence=OUT/'latest-evidence.zip'
     with zipfile.ZipFile(evidence,'w',zipfile.ZIP_DEFLATED) as z:
-        for p in [jpg,OUT/'game-status.json',OUT/'host-log-tail.txt']:z.write(p,p.name)
+        for p in [jpg,OUT/'game-status.json',OUT/'host-log-tail.txt',*optional]:z.write(p,p.name)
     gh('release','upload',TAG,str(evidence),'--repo',REPO,'--clobber',timeout=60)
     print(json.dumps({k:record.get(k) for k in ['snapshot','label','wall_seconds','process_alive','observed_stage','last_control_sequence','phase']}),flush=True)
 try:
@@ -109,13 +138,17 @@ try:
     container=Path(sim('get_app_container',udid,BUNDLE,'data'));docs=container/'Documents';docs.mkdir(exist_ok=True)
     target=docs/'DeadSpace.ipa';assert not target.exists();shutil.copy2(game,target);assert sha(target)==EXPECTED
     inbox=docs/'simulator-touch-inbox.txt';inbox.write_text('0 mark\n',encoding='utf-8');log=docs/'host-log.txt'
+    dump_dir=docs/'drawable-dumps';dump_dir.mkdir()
     safe_env['SIMCTL_CHILD_TOUCHHLE_DS_CONTROL_INBOX']=str(inbox)
-    launched=sim('launch',udid,BUNDLE);record['launch']=launched
-    try:pid=int(launched.rsplit(':',1)[1].strip())
-    except (ValueError,IndexError):pass
+    safe_env['SIMCTL_CHILD_TOUCHHLE_DUMP_FRAMES']=str(dump_dir)
+    safe_env['SIMCTL_CHILD_TOUCHHLE_DS_COLOR_PROBE']='1'
+    safe_env['SIMCTL_CHILD_TOUCHHLE_DS_COLOR_DIR']=str(docs/'color-probes')
+    safe_env['SIMCTL_CHILD_TOUCHHLE_DS_COLOR_FRAMES']='1,2,10,60,120,300'
+    record['diagnostic_readback_enabled']=True
+    launch_profile('android-default')
     record['phase']='guest-running';deadline=time.monotonic()+600;next_capture=time.monotonic()+8
     while not stop and time.monotonic()<deadline:
-        text=tail(log)
+        text=new_log();record['input_ready']=record['input_ready'] or '[DScontrol] ready' in text
         fatal=next((m for m in ['[IOSHost] core failed:','[IOSHost] panic caught','[INTERP-UNSUPPORTED]','panicked at'] if m in text),None)
         if fatal:
             record['phase']='runtime-failure';record['errors'].append(fatal);publish('runtime-failure');break
@@ -129,9 +162,15 @@ try:
             if sequence>record['last_control_sequence']:
                 commands=control.get('commands',[]);assert isinstance(commands,list) and len(commands)<=16
                 assert all(isinstance(c,str) and len(c)<100 and valid_command(c) for c in commands)
-                if commands and '[DScontrol] ready' not in text:
+                if commands and not record['input_ready']:
                     record['input_waiting_for_core_ready']=True
                 else:
+                    restart=control.get('restart_profile')
+                    if restart is not None:
+                        assert restart in ['android-default','direct-present']
+                        sim('terminate',udid,BUNDLE,timeout=20,check=False)
+                        if log.is_file():log_offset=log.stat().st_size
+                        launch_profile(restart);record['observed_stage']='starting'
                     for command in commands:
                         record['last_guest_sequence']+=1
                         temp=inbox.with_suffix('.tmp');temp.write_text(f"{record['last_guest_sequence']} {command}\n",encoding='utf-8');os.replace(temp,inbox);time.sleep(.45)
@@ -157,6 +196,14 @@ finally:
     if udid:
         try:publish('final')
         except Exception as error:record['final_snapshot_error']=str(error)[:500]
+        # Save diagnostics before deleting the ephemeral simulator's container.
+        if log and log.is_file():
+            (OUT/'simulator-game-host-log.txt').write_text(tail(log,8*1024*1024),encoding='utf-8')
+            with log.open('rb') as stream:head=stream.read(512*1024)
+            (OUT/'host-log-head.txt').write_bytes(head)
+        if container:
+            for ppm in sorted((container/'Documents/color-probes').glob('*.ppm'))[:30]:
+                with Image.open(ppm) as image:image.save(OUT/('probe-'+ppm.stem+'.png'))
         sim('terminate',udid,BUNDLE,timeout=20,check=False)
         sim('shutdown',udid,timeout=30,check=False);sim('delete',udid,timeout=30,check=False)
     if log and log.is_file():
