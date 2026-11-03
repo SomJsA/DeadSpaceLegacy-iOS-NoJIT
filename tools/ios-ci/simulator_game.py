@@ -56,6 +56,7 @@ def new_log():
     with log.open('rb') as stream:
         stream.seek(log_offset);data=stream.read(4*1024*1024);log_offset=stream.tell()
     text=data.decode('utf-8',errors='replace')
+    record['input_ready']=record['input_ready'] or '[DScontrol] ready' in text
     events.extend(line for line in text.splitlines() if any(key in line for key in ['[DScontrol]','[DStouch]','[DSscript]','[DSwindow]','[IOSHost]','[DSnative','panicked at']))
     del events[:-350]
     return text

@@ -1,14 +1,14 @@
 {
   "source_tree": "E:\\CodexProjects\\DeadSpaceLegacy\\work\\HyperHLE_ds_compat-ios-android-base-20261103",
-  "source_head": "e00aeeae3463315910849afd745ae795e0d48d6d",
+  "source_head": "be37f688e0ad502d5293f5b51772327cb6a60998",
   "baseline_platform": "android",
   "android_baseline_commit": "9cb5f50775a590c639aabf47907845f06b300e88",
   "cpu_implementation_commit": "315ef93eb37d975869bb8bd92a66735eb9742aa1",
   "purpose": "Private real Apple SDK build of the Android-derived no-JIT host",
   "contains_game_ipa": false,
   "contains_user_options": false,
-  "files": 726,
-  "bytes": 63697106,
+  "files": 727,
+  "bytes": 63699328,
   "sha256": {
     ".github/workflows/ios-host.yml": "9910153f503cc4dcf358fea790b056fedc8a87e3ec352fc845afc44bc3449fca",
     ".gitignore": "f33dc2210e4b6abb82ce107f72c03dfdfc477d9c9269f1dcc2bf4edb1d1fe260",
@@ -734,9 +734,10 @@
     "vendor/PVRTDecompress/README.md": "d3364829e27c2200320af3e99aaf9b61ce20f5a68763e8dafae932ac2da393cd",
     "tools/ios-ci/setup_image_qa.py": "ed6c65e191cd32aafe3634a924de5b60bef68bb764860c22666a6dfffcf378bd",
     "tools/ios-ci/review_existing.py": "2468120387c9399c923c554fc6066ad44e00d555cad2fcf91056088d1fb70823",
-    "tools/ios-ci/simulator_game.py": "1ffe4a34c0c4f1688aba261c3150e5565f970e8d5a4c1ce053a1f5e61cb5b3c1",
-    "dev-docs/IOS-SIMULATOR-RENDER-VALIDATION.md": "734d9bebd2065a2c3768d7e4898303f2319cce978541a8be46cb4f7190a49678"
+    "tools/ios-ci/simulator_game.py": "45b17338c2ff85af3d88683335c4e6f7b4d8a672df65184dc065e42dd59de35d",
+    "dev-docs/IOS-SIMULATOR-RENDER-VALIDATION.md": "734d9bebd2065a2c3768d7e4898303f2319cce978541a8be46cb4f7190a49678",
+    "tools/ios-ci/test_simulator_mailbox.py": "0a2bc1966e7fc476ff355aaa86ad93db7c4427c29331c7fc99d44dec1fe8d18f"
   },
   "native_artifact_source_commit": "e00aeeae3463315910849afd745ae795e0d48d6d",
-  "validation_only_change": false
+  "validation_only_change": true
 }
