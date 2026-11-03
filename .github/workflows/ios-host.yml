@@ -13,7 +13,8 @@
             "device-library",
             "integrated",
             "simulator",
-            "review-image"
+            "review-image",
+            "simulator-game"
           ]
         },
         "artifact_run": {
@@ -21,6 +22,12 @@
           "required": false,
           "type": "string",
           "default": "41614604627"
+        },
+        "game_release": {
+          "description": "Authorized private draft containing encrypted guest input",
+          "type": "string",
+          "required": false,
+          "default": ""
         }
       }
     }
@@ -78,6 +85,45 @@
           "with": {
             "name": "apple-nojit-build-evidence",
             "path": "apple-build-results/*.log\napple-build-results/*.json\napple-build-results/*.ipa\napple-build-results/*.png\napple-build-results/*.ips\napple-build-results/*.txt\napple-build-results/*.zip",
+            "retention-days": 3,
+            "if-no-files-found": "warn"
+          }
+        }
+      ],
+      "if": "${{ inputs.stage != 'simulator-game' }}"
+    },
+    "simulator_game": {
+      "if": "${{ inputs.stage == 'simulator-game' }}",
+      "runs-on": "macos-15",
+      "timeout-minutes": 20,
+      "permissions": {
+        "contents": "write",
+        "actions": "read"
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "with": {
+            "persist-credentials": false
+          }
+        },
+        {
+          "name": "Run unchanged native host with authorized encrypted original game",
+          "env": {
+            "GH_TOKEN": "${{ github.token }}",
+            "IOS_SIM_GUEST_KEY_B64": "${{ secrets.IOS_SIM_GUEST_KEY_B64 }}",
+            "GAME_RELEASE_TAG": "${{ inputs.game_release }}",
+            "NATIVE_ARTIFACT_RUN": "${{ inputs.artifact_run }}"
+          },
+          "run": "python3 -m venv .game-venv\n.game-venv/bin/python -m pip install --quiet Pillow==12.0.0 cryptography\n.game-venv/bin/python tools/ios-ci/simulator_game.py"
+        },
+        {
+          "name": "Keep only diagnostic evidence; exclude guest and keys",
+          "if": "always()",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "with": {
+            "name": "ios-original-game-diagnostics",
+            "path": "apple-build-results/*.json\napple-build-results/*.jpg\napple-build-results/*.png\napple-build-results/*.txt\napple-build-results/*.ips",
             "retention-days": 3,
             "if-no-files-found": "warn"
           }
