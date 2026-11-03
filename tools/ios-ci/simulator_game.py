@@ -48,13 +48,48 @@ def valid_command(text):
 
 record={'schema':1,'ci_run_id':os.environ.get('GITHUB_RUN_ID','local'),'native_build_run':RUN,'baseline':'android 9cb5f507','native_code_rebuilt':False,'game_present':False,'original_game_test':True,'test_scope':'startup, main menu and first controllable scene; not whole-game acceptance','physical_device_acceptance':False,'session':TAG,'phase':'preparing','observed_stage':'starting','last_control_sequence':0,'last_guest_sequence':0,'errors':[]}
 udid=None;container=None;log=None;inbox=None;started=time.time();snapshot=0;pid=None;log_offset=0;dump_dir=None
+recorder=None;recorder_log=None;events=[];frame_records=[];saved_frames=set();last_screen_touch=(0.5,0.5)
 record['profile']='android-default';record['input_ready']=False
 def new_log():
     global log_offset
     if not log or not log.is_file():return ''
     with log.open('rb') as stream:
         stream.seek(log_offset);data=stream.read(4*1024*1024);log_offset=stream.tell()
-    return data.decode('utf-8',errors='replace')
+    text=data.decode('utf-8',errors='replace')
+    events.extend(line for line in text.splitlines() if any(key in line for key in ['[DScontrol]','[DStouch]','[DSscript]','[DSwindow]','[IOSHost]','[DSnative','panicked at']))
+    del events[:-350]
+    return text
+def collect_drawables():
+    if not dump_dir:return
+    folder=OUT/'native-frames';folder.mkdir(exist_ok=True)
+    dumps=sorted(dump_dir.glob('*.ppm'),key=lambda p:p.stat().st_mtime)
+    for ppm in dumps:
+        identity=(record['profile'],ppm.name)
+        if identity in saved_frames:continue
+        if len(frame_records)>=512:continue
+        if time.time()-ppm.stat().st_mtime<.2:continue
+        name=f"{record['profile']}-{ppm.stem}.png";target=folder/name
+        try:
+            with Image.open(ppm) as image:image.save(target)
+        except OSError:continue # The guest may still be writing its newest dump.
+        saved_frames.add(identity)
+        frame_records.append({'file':name,'source':ppm.name,'wall_seconds':round(time.time()-started,3),'sha256':sha(target),'bytes':target.stat().st_size})
+    for old in dumps[:-2]:
+        assert old.resolve().parent==dump_dir.resolve();old.unlink()
+def deliver(command):
+    global last_screen_touch
+    record['last_guest_sequence']+=1;number=record['last_guest_sequence']
+    temp=inbox.with_suffix('.tmp');temp.write_text(f'{number} {command}\n',encoding='utf-8');os.replace(temp,inbox)
+    deadline=time.monotonic()+8
+    while time.monotonic()<deadline:
+        text=new_log()
+        if f'[DScontrol] sequence={number} queued' in text:
+            record['last_guest_ack_sequence']=number
+            if command.startswith('touch '):last_screen_touch=tuple(float(v) for v in command.split()[2:])
+            time.sleep(.2);return
+        if '[DScontrol] normalized touch rejected:' in text:raise RuntimeError('SDL rejected diagnostic Finger event')
+        time.sleep(.08)
+    raise RuntimeError(f'Diagnostic command {number} was not acknowledged; do not overwrite the mailbox')
 def launch_profile(name):
     global pid
     assert name in ['android-default','direct-present']
@@ -74,7 +109,7 @@ def publish(label):
     with Image.open(png) as im:
         im=im.convert('RGB');im.thumbnail((1568,1568));im.save(jpg,quality=80)
         if jpg.stat().st_size>350000:im.thumbnail((1200,1200));im.save(jpg,quality=70)
-    optional=[]
+    collect_drawables();optional=[]
     if dump_dir:
         dumps=sorted(dump_dir.glob('*.ppm'),key=lambda p:p.stat().st_mtime)
         if dumps:
@@ -85,8 +120,6 @@ def publish(label):
                 rgb.thumbnail((1568,1568));rgb.save(OUT/'drawable-preview.jpg',quality=80)
             atomic_json(OUT/'drawable-stats.json',stats);record['drawable']=stats
             optional=[OUT/'drawable-preview.jpg',OUT/'drawable-stats.json']
-            for old in dumps[:-2]:
-                assert old.resolve().parent==dump_dir.resolve();old.unlink()
     record.update(snapshot=snapshot,label=label,wall_seconds=round(time.time()-started,2),screenshot_sha256=sha(png),preview_sha256=sha(jpg),preview_bytes=jpg.stat().st_size,log_bytes=log.stat().st_size if log and log.is_file() else 0)
     processes=sim('spawn',udid,'launchctl','list',timeout=20)
     record['process_alive']=any(BUNDLE in line and line.split()[0].isdigit() for line in processes.splitlines() if line.split())
@@ -94,11 +127,14 @@ def publish(label):
         value=call(['ps','-p',str(pid),'-o','rss='],check=False)
         record['simulator_process_rss_kib']=value.strip()
     (OUT/'host-log-tail.txt').write_text(tail(log),encoding='utf-8')
+    new_log();(OUT/'diagnostic-events.txt').write_text('\n'.join(events)+'\n',encoding='utf-8')
+    optional.append(OUT/'diagnostic-events.txt')
     atomic_json(OUT/'game-status.json',record)
     evidence=OUT/'latest-evidence.zip'
     with zipfile.ZipFile(evidence,'w',zipfile.ZIP_DEFLATED) as z:
         for p in [jpg,OUT/'game-status.json',OUT/'host-log-tail.txt',*optional]:z.write(p,p.name)
     gh('release','upload',TAG,str(evidence),'--repo',REPO,'--clobber',timeout=60)
+    if label=='periodic':png.unlink()
     print(json.dumps({k:record.get(k) for k in ['snapshot','label','wall_seconds','process_alive','observed_stage','last_control_sequence','phase']}),flush=True)
 try:
     gh('run','download',RUN,'--repo',REPO,'--name','apple-nojit-build-evidence','--dir',str(PRIVATE/'native'),timeout=180)
@@ -146,13 +182,16 @@ try:
     dump_dir=docs/'drawable-dumps';dump_dir.mkdir()
     safe_env['SIMCTL_CHILD_TOUCHHLE_DS_CONTROL_INBOX']=str(inbox)
     safe_env['SIMCTL_CHILD_TOUCHHLE_DUMP_FRAMES']=str(dump_dir)
-    safe_env['SIMCTL_CHILD_TOUCHHLE_DS_COLOR_PROBE']='1'
-    safe_env['SIMCTL_CHILD_TOUCHHLE_DS_COLOR_DIR']=str(docs/'color-probes')
-    safe_env['SIMCTL_CHILD_TOUCHHLE_DS_COLOR_FRAMES']='1,2,10,60,120,300'
+    safe_env['SIMCTL_CHILD_TOUCHHLE_DS_TOUCH_LOG']='1'
     record['diagnostic_readback_enabled']=True
+    video=OUT/f'game-video-{record["ci_run_id"]}.mp4';recorder_log=(OUT/'video-recorder.txt').open('wb')
+    recorder=subprocess.Popen(['xcrun','simctl','io',udid,'recordVideo','--codec=h264','--force',str(video)],stdout=recorder_log,stderr=subprocess.STDOUT,env=safe_env)
+    time.sleep(1);record['video_started_before_guest']=recorder.poll() is None
+    if not record['video_started_before_guest']:raise RuntimeError('Simulator video recorder failed before guest launch')
     launch_profile('android-default')
     record['phase']='guest-running';deadline=time.monotonic()+600;next_capture=time.monotonic()+8
     while not stop and time.monotonic()<deadline:
+        collect_drawables()
         text=new_log();record['input_ready']=record['input_ready'] or '[DScontrol] ready' in text
         fatal=next((m for m in ['[IOSHost] core failed:','[IOSHost] panic caught','[INTERP-UNSUPPORTED]','panicked at'] if m in text),None)
         if fatal:
@@ -187,8 +226,7 @@ try:
                         if log.is_file():log_offset=log.stat().st_size
                         launch_profile(restart);record['observed_stage']='starting'
                     for command in commands:
-                        record['last_guest_sequence']+=1
-                        temp=inbox.with_suffix('.tmp');temp.write_text(f"{record['last_guest_sequence']} {command}\n",encoding='utf-8');os.replace(temp,inbox);time.sleep(.45)
+                        deliver(command)
                     record['last_control_sequence']=sequence
                     observed=control.get('observed_stage')
                     if observed in ['starting','headphone-screen','main-menu','chapter-intro','first-controllable-scene','runtime-failure']:record['observed_stage']=observed
@@ -206,11 +244,29 @@ except Exception as error:
 finally:
     if inbox:
         try:
-            record['last_guest_sequence']+=1;inbox.write_text(f"{record['last_guest_sequence']} release\n",encoding='utf-8');time.sleep(.4)
-        except OSError:pass
+            deliver(f'touch up {last_screen_touch[0]} {last_screen_touch[1]}');deliver('release')
+        except (OSError,RuntimeError):pass
     if udid:
         try:publish('final')
         except Exception as error:record['final_snapshot_error']=str(error)[:500]
+        if recorder:
+            if recorder.poll() is None:
+                recorder.send_signal(signal.SIGINT)
+                try:recorder.wait(timeout=20)
+                except subprocess.TimeoutExpired:recorder.terminate();recorder.wait(timeout=5)
+            if recorder_log:recorder_log.close()
+            if video.is_file() and video.stat().st_size:
+                record['video']={'asset':video.name,'bytes':video.stat().st_size,'sha256':sha(video),'audio':False,'timing':'simulator wall clock; not a physical-device performance measurement'}
+                try:gh('release','upload',TAG,str(video),'--repo',REPO,timeout=90)
+                except Exception as error:record['video_upload_error']=str(error)[:400]
+        if frame_records:
+            frames_zip=OUT/f'native-frames-{record["ci_run_id"]}.zip'
+            with zipfile.ZipFile(frames_zip,'w',zipfile.ZIP_STORED) as archive:
+                archive.writestr('frames.json',json.dumps({'native_size':'guest drawable; orientation preserved','sample_interval_native_presents':120,'frames':frame_records},indent=2))
+                for frame in frame_records:archive.write(OUT/'native-frames'/frame['file'],frame['file'])
+            record['native_frames']={'asset':frames_zip.name,'count':len(frame_records),'bytes':frames_zip.stat().st_size,'sha256':sha(frames_zip)}
+            try:gh('release','upload',TAG,str(frames_zip),'--repo',REPO,timeout=90)
+            except Exception as error:record['frames_upload_error']=str(error)[:400]
         # Save diagnostics before deleting the ephemeral simulator's container.
         if log and log.is_file():
             (OUT/'simulator-game-host-log.txt').write_text(tail(log,8*1024*1024),encoding='utf-8')

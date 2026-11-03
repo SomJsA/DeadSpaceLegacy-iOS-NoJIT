@@ -1,14 +1,14 @@
 {
   "source_tree": "E:\\CodexProjects\\DeadSpaceLegacy\\work\\HyperHLE_ds_compat-ios-android-base-20261103",
-  "source_head": "fb0ae49b48a2cdc5fd0a736aa85ec8607079c4ee",
+  "source_head": "e00aeeae3463315910849afd745ae795e0d48d6d",
   "baseline_platform": "android",
   "android_baseline_commit": "9cb5f50775a590c639aabf47907845f06b300e88",
   "cpu_implementation_commit": "315ef93eb37d975869bb8bd92a66735eb9742aa1",
   "purpose": "Private real Apple SDK build of the Android-derived no-JIT host",
   "contains_game_ipa": false,
   "contains_user_options": false,
-  "files": 725,
-  "bytes": 63691168,
+  "files": 726,
+  "bytes": 63697106,
   "sha256": {
     ".github/workflows/ios-host.yml": "9910153f503cc4dcf358fea790b056fedc8a87e3ec352fc845afc44bc3449fca",
     ".gitignore": "f33dc2210e4b6abb82ce107f72c03dfdfc477d9c9269f1dcc2bf4edb1d1fe260",
@@ -411,7 +411,7 @@
     "src/image/stb_image_wrapper/lib.c": "beca2f9af26c83ddedc9f9c553a11041d7c64ec260dc6be93998f345b2c2d7e9",
     "src/image/stb_image_wrapper/lib.rs": "8382e0ae09b70957b3b4b2a70a2c0125c13b5920d34c0006a7c4ee1546494f3c",
     "src/image_premultiply.rs": "f4488e0ef23d4d8fbbc04ff0a5b14947eeafdaae5012619739c8b2158b96f0f1",
-    "src/ios_host.rs": "75c28d130feeda6acb7f95ddee3f83ea46f93e079f6ec7c7030623510aa2e56a",
+    "src/ios_host.rs": "f9449c9fda7ced2a88c957271af1a30a9db964920f8b249c3d508deebb25b911",
     "src/ios_landing.rs": "3730e268c7975daa00f97f1ce16ae0275cb082fc7e6cfe04d6fa016d0d04761d",
     "src/ios_landing_bridge.m": "b91b1cd93a88bd75becf76830d030030a9b8315ed1dc5ba8b51ac959303a4015",
     "src/ios_resource_location.rs": "bbfc333bf1ccfbcfd333c25e1ae9b14b107743ed97460f2fe187b1fb4907b006",
@@ -522,7 +522,7 @@
     "src/version/bin.rs": "796a92673713d9a2d21b4b6f31c40b09086b89519622ee28a0c176638170edc4",
     "src/version/build.rs": "72b395edf7a1ccbe6e0229fa5e9384c228fc2743e68757827eb1e6cdb651ce56",
     "src/version/lib.rs": "0b30df8dfae6771bdeb6385fdbaaab5fe9b219eb6bb46a1e16db7fa72acba755",
-    "src/window.rs": "3a948e8c09e5fa845c15ac6bf310d7143e6185cd7e3e8afbe7a347df52cefb7a",
+    "src/window.rs": "72412f7e89300e9fbb22615a962d9662cc7201f06c3196c1b597fc7883b23918",
     "tests/.gitignore": "3a5ac917bd63a732187a0ade6cdb400620f800dfc474462544310a6a600761ff",
     "tests/README.md": "ab7f59806d7d440af49ba742d03c3b82628471bd1b725b2f277cb30667f36f70",
     "tests/TestApp.app/Info.plist": "4b5aa6a3d1cfad98cd93a7a3634341eec1948f8f33e1c38aa2e6a1f21a4df1fe",
@@ -560,7 +560,7 @@
     "tools/ios-ci/Toolchain.cmake": "a37fc90ec4261ac82ba7fe3775c513695a9cc8759b69ac9f2409c10bba891d6e",
     "tools/ios-ci/build.py": "d6f74160b87f1d9e741e702e61fae770b0d0a9f0a61aaf1e917d078b7c477d91",
     "tools/ios-ci/fetch-public.py": "1d2aae842348e42c61530863eac5ebc934ba97c510b58e9ee8a41f2ac1efb87e",
-    "tools/ios-ci/package_host.py": "a219626830bcf03a70ef7952ee7d01871e3ffd3ecc196134c0c5fd3f2bd98223",
+    "tools/ios-ci/package_host.py": "4b42ac287c08097b37fcf3644a7682b7ba0a1c36027019eb00e31c5f01c9a6a8",
     "tools/ios-ci/resource-cache-tests/Cargo.lock": "8ff2c19818bc1d5a246646354c8874772a5a5069cc21360f24d909d88698ab21",
     "tools/ios-ci/resource-cache-tests/Cargo.toml": "6725f1e417e6224d29ca4d2f3c2c20d66dd960458b1f8365e26e76ace8ad9587",
     "tools/ios-ci/simulator_smoke.py": "eaaf64a741204bf20063a0cebcd578136585b0e2dff9fd56901ce1a5f9d5ec7b",
@@ -734,8 +734,9 @@
     "vendor/PVRTDecompress/README.md": "d3364829e27c2200320af3e99aaf9b61ce20f5a68763e8dafae932ac2da393cd",
     "tools/ios-ci/setup_image_qa.py": "ed6c65e191cd32aafe3634a924de5b60bef68bb764860c22666a6dfffcf378bd",
     "tools/ios-ci/review_existing.py": "2468120387c9399c923c554fc6066ad44e00d555cad2fcf91056088d1fb70823",
-    "tools/ios-ci/simulator_game.py": "1447e10edf352de3b4375081a131ac8a9f162b2b431c9a8caa694bcadaceb2d7"
+    "tools/ios-ci/simulator_game.py": "1ffe4a34c0c4f1688aba261c3150e5565f970e8d5a4c1ce053a1f5e61cb5b3c1",
+    "dev-docs/IOS-SIMULATOR-RENDER-VALIDATION.md": "734d9bebd2065a2c3768d7e4898303f2319cce978541a8be46cb4f7190a49678"
   },
-  "native_artifact_source_commit": "fb0ae49b48a2cdc5fd0a736aa85ec8607079c4ee",
+  "native_artifact_source_commit": "e00aeeae3463315910849afd745ae795e0d48d6d",
   "validation_only_change": false
 }

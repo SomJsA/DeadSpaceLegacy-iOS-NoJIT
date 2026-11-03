@@ -3526,13 +3526,23 @@ impl Window {
                     Command::ScreenTouch { phase, x, y } => {
                         // Exercise the same Finger event route as physical iPad touch.
                         let timestamp = unsafe { sdl2_sys::SDL_GetTicks() };
-                        let event = match phase {
-                            0 => sdl2::event::Event::FingerDown { timestamp, touch_id: 0, finger_id: -7, x, y, dx: 0.0, dy: 0.0, pressure: 1.0 },
-                            1 => sdl2::event::Event::FingerMotion { timestamp, touch_id: 0, finger_id: -7, x, y, dx: 0.0, dy: 0.0, pressure: 1.0 },
-                            _ => sdl2::event::Event::FingerUp { timestamp, touch_id: 0, finger_id: -7, x, y, dx: 0.0, dy: 0.0, pressure: 0.0 },
+                        // This pinned rust-sdl2 cannot convert Finger events to
+                        // SDL_Event for push_event(). Use SDL's public C API;
+                        // the regular Finger polling/coordinate path stays shared.
+                        let kind = match phase {
+                            0 => sdl2_sys::SDL_EventType::SDL_FINGERDOWN,
+                            1 => sdl2_sys::SDL_EventType::SDL_FINGERMOTION,
+                            _ => sdl2_sys::SDL_EventType::SDL_FINGERUP,
                         };
-                        if let Err(error) = self._sdl_ctx.event().and_then(|events| events.push_event(event)) {
-                            echo!("[DScontrol] normalized touch rejected: {}", error);
+                        let mut event: sdl2_sys::SDL_Event = unsafe { std::mem::zeroed() };
+                        event.tfinger = sdl2_sys::SDL_TouchFingerEvent {
+                            type_: kind as u32, timestamp, touchId: 0, fingerId: -7,
+                            x, y, dx: 0.0, dy: 0.0,
+                            pressure: if phase == 2 { 0.0 } else { 1.0 },
+                            windowID: self.window.id(),
+                        };
+                        if unsafe { sdl2_sys::SDL_PushEvent(&mut event) } != 1 {
+                            echo!("[DScontrol] normalized touch rejected: {}", sdl2::get_error());
                             return;
                         }
                     }
