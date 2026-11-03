@@ -783,7 +783,7 @@ unsafe fn draw_present_current(
     // The raw function table is global. Reload before drawing: another guest
     // EAGL context may have replaced it since the previous activation.
     gles2::load_with(load_gl);
-    gles2::BindFramebuffer(gles2::FRAMEBUFFER, 0);
+    gles2::BindFramebuffer(gles2::FRAMEBUFFER, crate::window::host_default_framebuffer());
     gles2::Disable(gles2::SCISSOR_TEST);
     gles2::Disable(gles2::DEPTH_TEST);
     gles2::Disable(gles2::STENCIL_TEST);

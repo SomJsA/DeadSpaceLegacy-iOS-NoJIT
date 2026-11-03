@@ -1614,7 +1614,7 @@ unsafe fn present_renderbuffer_es2(
     gles.ActiveTexture(gles2::TEXTURE0);
     gles.BindTexture(gles2::TEXTURE_2D, present_objects.texture);
     gles.BindBuffer(gles2::ARRAY_BUFFER, present_objects.quad_vbo);
-    gles.BindFramebuffer(gles2::FRAMEBUFFER, 0);
+    gles.BindFramebuffer(gles2::FRAMEBUFFER, crate::window::host_default_framebuffer());
 
     // Configure the destination viewport (the window) and clear.
     gles.Viewport(
@@ -2790,9 +2790,11 @@ unsafe fn present_renderbuffer(env: &mut Environment, renderbuffer: GLuint, this
     // this function. In the fallback path, deleting the throwaway FBO
     // also implicitly unbinds it, leaving FRAMEBUFFER_BINDING == 0.
     if used_app_fbo || gpu_present_copy {
-        gles.BindFramebufferOES(gles11::FRAMEBUFFER_OES, 0);
+        gles.BindFramebufferOES(gles11::FRAMEBUFFER_OES, crate::window::host_default_framebuffer());
     } else {
         gles.DeleteFramebuffersOES(1, &src_framebuffer);
+        #[cfg(target_os = "ios")]
+        gles.BindFramebufferOES(gles11::FRAMEBUFFER_OES, crate::window::host_default_framebuffer());
     }
     {
         static SEEN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);

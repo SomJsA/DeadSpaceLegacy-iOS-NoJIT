@@ -123,3 +123,11 @@ inherits = "release"
 lto = false
 codegen-units = 16
 incremental = true
+
+# Integration builds conserve the free Apple CI allowance; keep interpreter code optimized.
+[profile.ios-integration]
+inherits = "release"
+opt-level = 3
+lto = false
+codegen-units = 16
+strip = "debuginfo"

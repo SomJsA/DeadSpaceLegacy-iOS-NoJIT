@@ -82,6 +82,14 @@ pub fn main() {
     let dynarmic_summary = dynarmic_legal.replace(dynarmic_license_oneline, &dynarmic_license);
     std::fs::write(out_dir.join("dynarmic_license.txt"), dynarmic_summary).unwrap();
 
+    if std::env::var("CARGO_CFG_TARGET_OS").unwrap() == "ios" {
+        cc::Build::new()
+            .file("src/ios_sdl_bridge.c")
+            .include("vendor/rust-sdl2/sdl2-sys/SDL/include")
+            .compile("touchhle_ios_sdl_bridge");
+        rerun_if_changed(&package_root.join("src/ios_sdl_bridge.c"));
+    }
+
     // libc++_shared.so has to be copied into the APK. See README of cargo-ndk.
     if std::env::var("CARGO_CFG_TARGET_OS").unwrap() == "android" {
         cc::Build::new()

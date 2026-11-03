@@ -7,10 +7,11 @@
           "description": "Apple-toolchain stage",
           "type": "choice",
           "required": true,
-          "default": "check",
+          "default": "integrated",
           "options": [
             "check",
-            "device-library"
+            "device-library",
+            "integrated"
           ]
         }
       }
@@ -26,7 +27,7 @@
   "jobs": {
     "apple": {
       "runs-on": "macos-15",
-      "timeout-minutes": 45,
+      "timeout-minutes": 20,
       "steps": [
         {
           "uses": "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
@@ -40,7 +41,7 @@
         },
         {
           "name": "Install build tools",
-          "run": "command -v cmake >/dev/null || brew install cmake\ncommand -v ninja >/dev/null || brew install ninja\nrustup toolchain install 1.99.0 --profile minimal\nrustup default 1.99.0\nrustup target add aarch64-apple-ios"
+          "run": "command -v cmake >/dev/null || brew install cmake\ncommand -v ninja >/dev/null || brew install ninja\nrustup toolchain install 1.99.0 --profile minimal\nrustup default 1.99.0\nrustup target add aarch64-apple-ios aarch64-apple-ios-sim"
         },
         {
           "name": "Core tests and complete iOS build",
@@ -55,7 +56,7 @@
           "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
           "with": {
             "name": "apple-nojit-build-evidence",
-            "path": "apple-build-results/",
+            "path": "apple-build-results/*.log\napple-build-results/*.json\napple-build-results/*.ipa\napple-build-results/*.png\napple-build-results/*.ips",
             "retention-days": 3,
             "if-no-files-found": "warn"
           }

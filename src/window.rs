@@ -1429,7 +1429,7 @@ impl Window {
     /// display fullscreen, but SDL2 will let us control the orientation, i.e.
     /// Android devices.
     pub fn rotatable_fullscreen() -> bool {
-        env::consts::OS == "android"
+        matches!(env::consts::OS, "android" | "ios")
     }
 
     /// Confirm normal desktop window close. Never intercept OS force termination.
@@ -1693,13 +1693,15 @@ impl Window {
         // remove this (https://github.com/touchHLE/touchHLE/issues/85).
         sdl2::hint::set("SDL_JOYSTICK_HIDAPI", "0");
 
-        if env::consts::OS == "android" {
+        if matches!(env::consts::OS, "android" | "ios") {
             // It's important to set context version BEFORE window creation
             // ref. https://wiki.libsdl.org/SDL2/SDL_GLattr
             let attr = video_ctx.gl_attr();
             attr.set_context_version(1, 1);
             attr.set_context_profile(sdl2::video::GLProfile::GLES);
 
+        }
+        if env::consts::OS == "android" {
             // Disable blocking of event loop when app is paused.
             sdl2::hint::set("SDL_ANDROID_BLOCK_ON_PAUSE", "0");
         }
@@ -4823,7 +4825,7 @@ impl Window {
             gl_ctx.DeleteTextures(1, &texture);
         };
 
-        self.window.gl_swap_window();
+        self.swap_gl_window();
 
         // hold onto GL context so the image doesn't disappear, and hold
         // onto image so we can rotate later if necessary
@@ -4831,6 +4833,13 @@ impl Window {
 
     /// Swap front-buffer and back-buffer so the result of OpenGL rendering is
     /// presented.
+    fn swap_gl_window(&self) {
+        #[cfg(target_os = "ios")]
+        crate::ios_sdl::swap_window(self.window.raw());
+        #[cfg(not(target_os = "ios"))]
+        self.window.gl_swap_window();
+    }
+
     pub fn swap_window(&self) {
         // Frame-rate cap (`TOUCHHLE_DS_FPS_CAP`): sleep until the frame budget
         // has elapsed, so a fast machine does not spin the guest at hundreds of
@@ -4859,7 +4868,7 @@ impl Window {
                 }
             }
         }
-        self.window.gl_swap_window();
+        self.swap_gl_window();
     }
 
     /// Consider the emulated device to be rotated to a particular orientation.
@@ -5241,4 +5250,13 @@ pub fn show_alert_dialog(
             _ => 0,
         }
     })
+}
+
+/// Native UIKit uses an SDL-owned nonzero window framebuffer.
+/// Other hosts retain their existing default framebuffer zero.
+pub(crate) fn host_default_framebuffer() -> u32 {
+    #[cfg(target_os = "ios")]
+    { crate::ios_sdl::default_framebuffer() }
+    #[cfg(not(target_os = "ios"))]
+    { 0 }
 }

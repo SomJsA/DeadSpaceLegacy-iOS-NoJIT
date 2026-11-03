@@ -27,7 +27,7 @@ def run(args, label, env=None, cwd=ROOT):
     return result
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--stage', choices=['check', 'device-library'], default='check')
+parser.add_argument('--stage', choices=['check', 'device-library', 'integrated'], default='check')
 args = parser.parse_args()
 if sys.platform != 'darwin':
     raise SystemExit('This stage requires real macOS with Xcode and the Apple iOS SDK.')
@@ -56,6 +56,25 @@ metadata = {'host':platform.platform(),'sdk':sdk,'deployment_target':'15.0',
 run(['rustc','-vV'], 'rust-version')
 run(['xcodebuild','-version'], 'xcode-version')
 run(['cargo','test','--release','--manifest-path','src/cpu/arm_interpreter/Cargo.toml'], 'portable-core-tests')
+if args.stage == 'integrated':
+    from package_host import package
+    from simulator_smoke import smoke
+    run(['cargo','test','--locked','--manifest-path','tools/ios-ci/resource-cache-tests/Cargo.toml'], 'resource-cache-tests')
+    env['CARGO_BUILD_JOBS']='2'
+    for target, sdk_name in [('aarch64-apple-ios','iphoneos'),('aarch64-apple-ios-sim','iphonesimulator')]:
+        active=env.copy()
+        active['SDKROOT']=subprocess.check_output(['xcrun','--sdk',sdk_name,'--show-sdk-path'],text=True).strip()
+        compiler=subprocess.check_output(['xcrun','--sdk',sdk_name,'--find','clang'],text=True).strip()
+        compilerxx=subprocess.check_output(['xcrun','--sdk',sdk_name,'--find','clang++'],text=True).strip()
+        key=target.replace('-','_')
+        active['CC_'+key]=compiler;active['CXX_'+key]=compilerxx
+        run(['cargo','build','--locked','--bin','touchHLE','--profile','ios-integration','--target',target,
+             '--no-default-features','--features','static,cpu-interpreter'],target+'-full-host',active)
+        app=package(ROOT,ROOT/'apple-target'/target/'ios-integration/touchHLE',target.endswith('-sim'))
+        if target.endswith('-sim'):
+            smoke(ROOT,app)
+    print('Integrated device package and simulator launch checks complete; real iPad game execution is still pending.')
+    raise SystemExit(0)
 cmd = ['cargo', 'check' if args.stage=='check' else 'build', '--locked', '--lib',
        '--target','aarch64-apple-ios','--no-default-features','--features','static,cpu-interpreter']
 if args.stage != 'check':

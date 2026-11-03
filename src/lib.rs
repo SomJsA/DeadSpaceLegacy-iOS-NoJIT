@@ -74,6 +74,8 @@ mod objc;
 mod options;
 mod paths;
 mod stack;
+#[cfg(target_os = "ios")]
+mod ios_sdl;
 mod window;
 
 /// JNI bridge used by the Android real-present FPS overlay.

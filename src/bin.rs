@@ -68,6 +68,7 @@ fn disable_os_ime() {
 #[cfg(not(windows))]
 fn disable_os_ime() {}
 
+#[cfg(not(target_os = "ios"))]
 fn main() -> Result<(), String> {
     make_process_dpi_aware();
     disable_os_ime();
@@ -75,3 +76,10 @@ fn main() -> Result<(), String> {
     touchHLE::finish_play_diagnostics(result.is_ok());
     result
 }
+
+#[cfg(target_os = "ios")]
+mod host_resource_cache;
+#[cfg(target_os = "ios")]
+mod ios_host;
+#[cfg(target_os = "ios")]
+fn main() { ios_host::main(); }

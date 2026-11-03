@@ -1,0 +1,10 @@
+{
+  "policy": "0 monetary budget; included allowance only",
+  "user_confirmed_stop_on_excess": true,
+  "user_reported_no_payment_method": true,
+  "standard_runner": "macos-15",
+  "manual_trigger_only": true,
+  "maximum_job_minutes": 20,
+  "maximum_concurrent_jobs": 1,
+  "automatic_retries": false
+}
