@@ -112,9 +112,10 @@ def package(root,binary,simulator=False):
               'cpu_features':['cpu-interpreter'],'game_ipa_bundled':False,
               'macho':macho,'runtime_validation':'pending','known_limitations':[
               'First complete iOS host attempt; actual iPad game execution unverified',
-              'Simulator app-picker smoke is not full-game or real-device acceptance',
+              'Simulator mobile setup smoke is not full-game or real-device acceptance',
               'No claims for game graphics, audio, touch, lifecycle, saves or performance'],
               'acceptance_steps':['Sign this host IPA once on remote Windows','Copy unchanged DeadSpace.ipa into host Documents without replacing existing files','Open DS NoJIT Host; inspect first game screen and sound/touch','Collect host-log.txt and any crash log; keep original IPA and saves']}
+    manifest.update(architectures=macho['architectures'], mach_o_slices=[{'architecture':'arm64','bits':64,'platform':'iPhoneSimulator' if simulator else 'iPhoneOS'}], signed=False, provisioning_profile_included=False, embedded_frameworks=[], embedded_dynamic_libraries=[], additional_resource_packages=[], baseline_platform='android', android_baseline_commit='9cb5f50775a590c639aabf47907845f06b300e88', expected_first_screen='Mobile setup screen if Documents/DeadSpace.ipa is absent; otherwise attempts the original guest game', source_origin=json.loads((root/'SOURCE-ORIGIN.json').read_text(encoding='utf-8')) if (root/'SOURCE-ORIGIN.json').exists() else None)
     if ipa:manifest.update(file_name=ipa.name,file_bytes=ipa.stat().st_size,sha256=hashlib.sha256(ipa.read_bytes()).hexdigest())
     (out/(kind+'-manifest.json')).write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf-8')
     return app

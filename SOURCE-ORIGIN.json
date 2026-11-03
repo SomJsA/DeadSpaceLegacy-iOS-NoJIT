@@ -1,14 +1,14 @@
 {
   "source_tree": "E:\\CodexProjects\\DeadSpaceLegacy\\work\\HyperHLE_ds_compat-ios-android-base-20261103",
-  "source_head": "118f932c0c6ce719b76bb2ef6533491187ce4f9e",
+  "source_head": "432c442704cf1ed807828986ea4bfd841ea4a2d3",
   "baseline_platform": "android",
   "android_baseline_commit": "9cb5f50775a590c639aabf47907845f06b300e88",
   "cpu_implementation_commit": "315ef93eb37d975869bb8bd92a66735eb9742aa1",
   "purpose": "Private real Apple SDK build of the Android-derived no-JIT host",
   "contains_game_ipa": false,
   "contains_user_options": false,
-  "files": 718,
-  "bytes": 63631130,
+  "files": 722,
+  "bytes": 63662925,
   "sha256": {
     ".github/workflows/ios-host.yml": "67b86a0085300d12c77050b128a1ac0aecae4e663912c1024ff9d59b45254c5c",
     ".gitignore": "f33dc2210e4b6abb82ce107f72c03dfdfc477d9c9269f1dcc2bf4edb1d1fe260",
@@ -560,7 +560,7 @@
     "tools/ios-ci/Toolchain.cmake": "a37fc90ec4261ac82ba7fe3775c513695a9cc8759b69ac9f2409c10bba891d6e",
     "tools/ios-ci/build.py": "d6f74160b87f1d9e741e702e61fae770b0d0a9f0a61aaf1e917d078b7c477d91",
     "tools/ios-ci/fetch-public.py": "1d2aae842348e42c61530863eac5ebc934ba97c510b58e9ee8a41f2ac1efb87e",
-    "tools/ios-ci/package_host.py": "1982a6f17632c4a2c283ca0cb7eb1fe3b9aadf1717fd1eda180ebb2903aa0977",
+    "tools/ios-ci/package_host.py": "2f182ed7b3033a12eaafeb371c9314dd00b750111377cc2d1a4771bbc624c135",
     "tools/ios-ci/resource-cache-tests/Cargo.lock": "8ff2c19818bc1d5a246646354c8874772a5a5069cc21360f24d909d88698ab21",
     "tools/ios-ci/resource-cache-tests/Cargo.toml": "6725f1e417e6224d29ca4d2f3c2c20d66dd960458b1f8365e26e76ace8ad9587",
     "tools/ios-ci/simulator_smoke.py": "2f019e5d74607db8ec42c82d920f18a9f4b53e5a3f16eded2bb0e002d5bb2f52",
@@ -727,6 +727,10 @@
     "vendor/rust-sdl2/tests/audio.rs": "3225ec7c2e35c657e0db7a6b8ed1dcef45e78a667cb636e9b2e83d0394cefedf",
     "vendor/rust-sdl2/tests/events.rs": "54bc0cf4f75a54b8cc726654aef7a2ba8df5abf3a0e1b622b081a9279e3ac837",
     "vendor/rust-sdl2/tests/raw_window_handle.rs": "36813da53143fecad7e500c424cf7cf778deea62f2ddfada80fd0abb9d9bb676",
-    "vendor/rust-sdl2/tests/render.rs": "84d1fcfc16efc147b97e3cbb33bbd07a68f0adf8c2838f1bea46b69e94772f56"
+    "vendor/rust-sdl2/tests/render.rs": "84d1fcfc16efc147b97e3cbb33bbd07a68f0adf8c2838f1bea46b69e94772f56",
+    "vendor/PVRTDecompress/LICENSE.md": "6c631fcb8d3cc74842aeaa3d907c89920bebdc4e7cc066752a95f6cdb249f511",
+    "vendor/PVRTDecompress/PVRTDecompress.cpp": "efb35f85890faf5ee6bbb01303a752fd9f43fe807dad3fd2a2a672edffd45f26",
+    "vendor/PVRTDecompress/PVRTDecompress.h": "ce6b277b4accac1bf25329f40b9be12694ed260b3a274649127e1510d59b4745",
+    "vendor/PVRTDecompress/README.md": "d3364829e27c2200320af3e99aaf9b61ce20f5a68763e8dafae932ac2da393cd"
   }
 }
