@@ -3522,6 +3522,20 @@ impl Window {
         match result {
             Ok(Some((sequence, command))) => {
                 match command {
+                    #[cfg(target_os = "ios")]
+                    Command::ScreenTouch { phase, x, y } => {
+                        // Exercise the same Finger event route as physical iPad touch.
+                        let timestamp = unsafe { sdl2_sys::SDL_GetTicks() };
+                        let event = match phase {
+                            0 => sdl2::event::Event::FingerDown { timestamp, touch_id: 0, finger_id: -7, x, y, dx: 0.0, dy: 0.0, pressure: 1.0 },
+                            1 => sdl2::event::Event::FingerMotion { timestamp, touch_id: 0, finger_id: -7, x, y, dx: 0.0, dy: 0.0, pressure: 1.0 },
+                            _ => sdl2::event::Event::FingerUp { timestamp, touch_id: 0, finger_id: -7, x, y, dx: 0.0, dy: 0.0, pressure: 0.0 },
+                        };
+                        if let Err(error) = self._sdl_ctx.event().and_then(|events| events.push_event(event)) {
+                            echo!("[DScontrol] normalized touch rejected: {}", error);
+                            return;
+                        }
+                    }
                     Command::Touch(action) => {
                         let values: Vec<f32> = action.split_whitespace().skip(1)
                             .filter_map(|v| v.parse().ok()).collect();

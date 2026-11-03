@@ -65,7 +65,7 @@ fn initialize() -> Result<PathBuf, String> {
     let resources = crate::host_resource_cache::prepare(base, &library)?;
     std::env::set_var("TOUCHHLE_IOS_RESOURCES_DIR", &resources);
     std::env::set_current_dir(&resources).map_err(|e| e.to_string())?;
-    eprintln!("\n[IOSHost] Android-based HLE host 0.4.0 / interpreter / no JIT");
+    eprintln!("\n[IOSHost] Android-based HLE host 0.4.1 / interpreter / no JIT");
     eprintln!(
         "[IOSHost] bundle={} documents={}",
         base.display(),
@@ -98,7 +98,7 @@ unsafe extern "C" fn run_core(_: i32, _: *mut *mut c_char) -> i32 {
             args.push(game.to_string_lossy().into_owned());
         } else {
             eprintln!("[IOSHost] original guest absent; showing mobile setup screen");
-            return touchHLE::show_ios_landing("Dead Space No-JIT Host 0.4.0\n\nAndroid mobile baseline\n\nCopy the unchanged DeadSpace.ipa to this app\'s Documents folder, then reopen.\n\nTouch controls only. No game is bundled.");
+            return touchHLE::show_ios_landing("Dead Space No-JIT Host 0.4.1\n\nAndroid mobile baseline\n\nCopy the unchanged DeadSpace.ipa to this app\'s Documents folder, then reopen.\n\nTouch controls only. No game is bundled.");
         }
         args.push("--gles1=gles1_native".to_owned());
         let result = touchHLE::main(args.into_iter());

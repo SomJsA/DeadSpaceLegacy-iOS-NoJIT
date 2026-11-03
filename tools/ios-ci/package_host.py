@@ -9,7 +9,7 @@ import stat
 import struct
 import zipfile
 
-VERSION='0.4.0'
+VERSION='0.4.1'
 BUILD='1'
 BUNDLE_ID='dev.somjs.deadspacelegacy.nojithost'
 

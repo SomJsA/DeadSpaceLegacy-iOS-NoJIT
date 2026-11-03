@@ -2,7 +2,10 @@
 #include "SDL.h"
 #include "SDL_syswm.h"
 
+extern int touchhle_ios_activate_current_view(SDL_Window *window);
+
 static int drawable_info(SDL_Window *window, SDL_SysWMinfo *info) {
+    if (touchhle_ios_activate_current_view(window) != 0) return -1;
     SDL_VERSION(&info->version);
     if (!window || !SDL_GetWindowWMInfo(window, info)) return -1;
     if (info->subsystem != SDL_SYSWM_UIKIT)

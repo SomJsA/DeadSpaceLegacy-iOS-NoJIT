@@ -22,7 +22,7 @@ signal.signal(signal.SIGTERM,stopping);signal.signal(signal.SIGINT,stopping)
 safe_env={k:v for k,v in os.environ.items() if not any(x in k.upper() for x in ['TOKEN','SECRET','GUEST_KEY','PASSWORD']) and not k.startswith(('GITHUB_','ACTIONS_','RUNNER_'))}
 def call(args,timeout=90,apple=False,check=True):
     r=subprocess.run(args,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=timeout,env=safe_env if apple else None)
-    if check and r.returncode:raise RuntimeError('Command failed: '+args[0]+' '+args[1]+'\n'+r.stdout[-1800:])
+    if check and r.returncode:raise RuntimeError('Command failed: '+args[0]+' '+args[1]+'\n'+re.sub(r'https?://[^\s)]+','<redacted-download-url>',r.stdout[-1800:]))
     return r.stdout.strip()
 def gh(*args,**kw):return call(['gh',*args],**kw)
 def sha(path):
@@ -37,13 +37,16 @@ def tail(path,size=65536):
 def valid_command(text):
     words=text.split()
     if words in [['release'],['mark'],['probe']]:return True
+    if len(words)==4 and words[0]=='touch' and words[1] in ['down','move','up']:
+        try:return all(0<=float(x)<=1 for x in words[2:])
+        except ValueError:return False
     if not words or words[0] not in ['tap','down','move','up','swipe']:return False
     if len(words)!=(5 if words[0]=='swipe' else 3):return False
     try:
         return all(0<=float(x)<=(480 if i%2==0 else 320) for i,x in enumerate(words[1:]))
     except ValueError:return False
 
-record={'schema':1,'native_build_run':RUN,'native_source_commit':'ab82323bee2802e6216089c885d5a128ad533444','baseline':'android 9cb5f507','native_code_rebuilt':False,'game_present':False,'original_game_test':True,'test_scope':'startup, main menu and first controllable scene; not whole-game acceptance','physical_device_acceptance':False,'session':TAG,'phase':'preparing','observed_stage':'starting','last_control_sequence':0,'last_guest_sequence':0,'errors':[]}
+record={'schema':1,'ci_run_id':os.environ.get('GITHUB_RUN_ID','local'),'native_build_run':RUN,'baseline':'android 9cb5f507','native_code_rebuilt':False,'game_present':False,'original_game_test':True,'test_scope':'startup, main menu and first controllable scene; not whole-game acceptance','physical_device_acceptance':False,'session':TAG,'phase':'preparing','observed_stage':'starting','last_control_sequence':0,'last_guest_sequence':0,'errors':[]}
 udid=None;container=None;log=None;inbox=None;started=time.time();snapshot=0;pid=None;log_offset=0;dump_dir=None
 record['profile']='android-default';record['input_ready']=False
 def new_log():
@@ -55,7 +58,7 @@ def new_log():
 def launch_profile(name):
     global pid
     assert name in ['android-default','direct-present']
-    options='--trace-gl-errors'+(' --fast-present' if name=='direct-present' else '')
+    options='--fast-present' if name=='direct-present' else ''
     (container/'Documents/touchHLE_options.txt').write_text('# Isolated graphics diagnostic only\ncom.ea.deadspace.bv: '+options+'\n',encoding='utf-8')
     record['profile']=name;record['input_ready']=False
     launched=sim('launch',udid,BUNDLE);record['launch']=launched
@@ -100,7 +103,9 @@ def publish(label):
 try:
     gh('run','download',RUN,'--repo',REPO,'--name','apple-nojit-build-evidence','--dir',str(PRIVATE/'native'),timeout=180)
     native=PRIVATE/'native';manifest=json.loads((native/'simulator-manifest.json').read_text(encoding='utf-8'))
-    assert manifest['source_origin']['source_head']==record['native_source_commit']
+    assert manifest['baseline_platform']=='android' and manifest['android_baseline_commit']=='9cb5f50775a590c639aabf47907845f06b300e88'
+    assert manifest['cpu_features']==['cpu-interpreter']
+    record['native_source_commit']=manifest['source_origin']['source_head'];record['host_version']=manifest['version']
     app_root=PRIVATE/'simulator-app';app_root.mkdir()
     with zipfile.ZipFile(native/'simulator-app.zip') as z:
         assert len(z.infolist())<100
@@ -154,9 +159,19 @@ try:
             record['phase']='runtime-failure';record['errors'].append(fatal);publish('runtime-failure');break
         control_dir=PRIVATE/'control';control_dir.mkdir(exist_ok=True)
         try:
-            gh('release','download',TAG,'--repo',REPO,'--pattern','control.json','--dir',str(control_dir),'--clobber',timeout=20)
-            assert (control_dir/'control.json').stat().st_size<=4096
-            control=json.loads((control_dir/'control.json').read_text(encoding='utf-8'))
+            releases=json.loads(gh('api','--method','GET',f'repos/{REPO}/releases','-f','per_page=100','-f','_='+str(time.time_ns()),timeout=20))
+            release=next(r for r in releases if r['draft'] and r['tag_name']==TAG)
+            prefix='control-'+record['ci_run_id']+'-'
+            candidates=[a for a in release['assets'] if a['name'].startswith(prefix) and a['name'].endswith('.json') and a['size']<=4096]
+            if candidates:
+                newest=max(candidates,key=lambda a:a['name'])
+                if newest['name']!=record.get('control_asset'):
+                    gh('release','download',TAG,'--repo',REPO,'--pattern',newest['name'],'--dir',str(control_dir),'--clobber',timeout=20)
+                    record['control_asset']=newest['name']
+                control=json.loads((control_dir/newest['name']).read_text(encoding='utf-8'))
+            else:
+                control={'schema':1,'session':TAG,'run_id':record['ci_run_id'],'sequence':0,'commands':[]}
+            assert control.get('run_id')==record['ci_run_id']
             assert control.get('schema')==1 and control.get('session')==TAG
             sequence=control.get('sequence');assert isinstance(sequence,int) and 0<=sequence<10000
             if sequence>record['last_control_sequence']:

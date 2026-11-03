@@ -6,6 +6,7 @@ use std::time::{Duration, Instant};
 #[derive(Debug, PartialEq)]
 pub enum Command {
     Touch(String),
+    ScreenTouch { phase: u8, x: f32, y: f32 },
     Action(String),
     Hud(String),
     Aim(bool),
@@ -55,6 +56,13 @@ impl Inbox {
         }
         let args = &words[2..];
         let command = match words[1] {
+            "touch" if args.len() == 3 && ["down", "move", "up"].contains(&args[0]) => {
+                let x = args[1].parse::<f32>().map_err(|_| "invalid normalized x")?;
+                let y = args[2].parse::<f32>().map_err(|_| "invalid normalized y")?;
+                if !x.is_finite() || !y.is_finite() || !(0.0..=1.0).contains(&x) || !(0.0..=1.0).contains(&y) { return Err("normalized touch outside window".into()); }
+                let phase = match args[0] { "down" => 0, "move" => 1, _ => 2 };
+                Command::ScreenTouch { phase, x, y }
+            }
             "pad" if args.len()==2 && ["down","up"].contains(&args[1]) => {
                 if !["A","B","X","Y","LB","RB","START","BACK","LS","RS","UP","RIGHT","DOWN","LEFT"].contains(&args[0]) {return Err("unsupported test pad button".into());}
                 Command::TestPadButton(args[0].into(),args[1]=="down")
@@ -257,4 +265,13 @@ mod tests {
         }
         assert!(i.accept("8 action 0xdeadbeef").is_err());
     }
+    #[test]
+    fn normalized_mobile_touch_is_bounded_and_separate_from_desktop_actions() {
+        let mut inbox=Inbox::default();
+        for line in ["1 touch down NaN 0.5", "1 touch down 1.1 0.2", "1 touch up -0.1 0", "1 touch press 0 0", "1 touch down 0 0\n2 touch up 0 0"] { assert!(inbox.accept(line).is_err()); }
+        assert_eq!(inbox.accept("1 touch down 0 1").unwrap(),Some((1,Command::ScreenTouch{phase:0,x:0.0,y:1.0})));
+        assert_eq!(inbox.accept("2 touch move 0.5 0.5").unwrap(),Some((2,Command::ScreenTouch{phase:1,x:0.5,y:0.5})));
+        assert_eq!(inbox.accept("3 touch up 1 0").unwrap(),Some((3,Command::ScreenTouch{phase:2,x:1.0,y:0.0})));
+    }
+
 }
