@@ -1,10 +1,10 @@
 {
   "source_tree": "E:\\CodexProjects\\DeadSpaceLegacy\\work\\HyperHLE_ds_compat-ios-native-host-20261103",
-  "source_head": "c197ff26a5f091dfbb66dab496d73a55030b2a48",
+  "source_head": "432b73a176674db8fd5262574217b6855df8af2a",
   "cpu_implementation_commit": "315ef93eb37d975869bb8bd92a66735eb9742aa1",
   "purpose": "Private Apple SDK build of complete no-JIT core; no game data, saves, signing credentials or accounts exported",
   "files": 745,
-  "bytes": 53461163,
+  "bytes": 53461480,
   "contains_game_ipa": false,
   "public_dependencies_fetched_by_ci": [
     "SDL release-2.26.4",
@@ -424,7 +424,7 @@
     "src/gles/gles_generic.rs": "272a3ba9d4ac2753f2fbe97145da58930fe3486086d8cb63c5d62e0563828a2a",
     "src/gles/present.rs": "b82669083fdcd9e3a9b6d74dfa100b5d388fb8f36c2f21f2b5e467ba46f11197",
     "src/gles/util.rs": "a8514788b1fc52e37dadc61b44a866cb2f2b2ecc77ec400bed7a8c8a4b9aecda",
-    "src/host_resource_cache.rs": "46652d421f1b9deaf4d0be3b982376aad629d87147fd1f32a4eac148b0da15db",
+    "src/host_resource_cache.rs": "8aca995b06781428b81b42aa19182d1e2fe9dc166e7215e7ce803fd3cc4d640e",
     "src/image.rs": "a1ef3775b75359fb89055140cbb5bb319d3acb2bc823cc71f48860e05b7fc8b8",
     "src/image/pvrt_decompress_wrapper/Cargo.toml": "2d9c3bd3774af5d26c0616e0c8c88219021fe5cf2451b3f159df89f5b84ff0a2",
     "src/image/pvrt_decompress_wrapper/build.rs": "1b3df8a3a00578b8581d1ffbc3a9f1aa7d6f40d23bee7972c41cd7ad3e06cd3b",

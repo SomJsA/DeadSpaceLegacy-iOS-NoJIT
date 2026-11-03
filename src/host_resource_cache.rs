@@ -5,6 +5,8 @@ use std::collections::HashSet;
 use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
+static NEXT_DIRECTORY: AtomicU64 = AtomicU64::new(0);
 
 pub fn prepare(bundle: &Path, library: &Path) -> Result<PathBuf, String> {
     let input = bundle.join("host-resources.zip");
@@ -32,7 +34,8 @@ pub fn prepare(bundle: &Path, library: &Path) -> Result<PathBuf, String> {
         .duration_since(std::time::UNIX_EPOCH)
         .map_err(|e| e.to_string())?
         .as_nanos();
-    let stage = root.join(format!("extract-{stamp}"));
+    let sequence = NEXT_DIRECTORY.fetch_add(1, Ordering::Relaxed);
+    let stage = root.join(format!("extract-{}-{stamp}-{sequence}", std::process::id()));
     fs::create_dir(&stage).map_err(|e| e.to_string())?;
     extract(&input, &stage)?;
     fs::write(stage.join(".complete"), hash).map_err(|e| e.to_string())?;
@@ -105,7 +108,11 @@ mod tests {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        let base = std::env::temp_dir().join(format!("ds-ios-res-{}-{stamp}", std::process::id()));
+        let sequence = NEXT_DIRECTORY.fetch_add(1, Ordering::Relaxed);
+        let base = std::env::temp_dir().join(format!(
+            "ds-ios-res-{}-{stamp}-{sequence}",
+            std::process::id()
+        ));
         fs::create_dir(&base).unwrap();
         let input = base.join("host-resources.zip");
         let mut archive = zip::ZipWriter::new(File::create(&input).unwrap());
