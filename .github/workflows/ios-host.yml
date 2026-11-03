@@ -1,0 +1,66 @@
+{
+  "name": "Complete iOS no-JIT core",
+  "on": {
+    "workflow_dispatch": {
+      "inputs": {
+        "stage": {
+          "description": "Apple-toolchain stage",
+          "type": "choice",
+          "required": true,
+          "default": "check",
+          "options": [
+            "check",
+            "device-library"
+          ]
+        }
+      }
+    }
+  },
+  "permissions": {
+    "contents": "read"
+  },
+  "concurrency": {
+    "group": "ios-native-nojit",
+    "cancel-in-progress": false
+  },
+  "jobs": {
+    "apple": {
+      "runs-on": "macos-15",
+      "timeout-minutes": 45,
+      "steps": [
+        {
+          "uses": "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "with": {
+            "persist-credentials": false
+          }
+        },
+        {
+          "name": "Fetch pinned public native dependencies",
+          "run": "python3 tools/ios-ci/fetch-public.py"
+        },
+        {
+          "name": "Install build tools",
+          "run": "command -v cmake >/dev/null || brew install cmake\ncommand -v ninja >/dev/null || brew install ninja\nrustup toolchain install 1.99.0 --profile minimal\nrustup default 1.99.0\nrustup target add aarch64-apple-ios"
+        },
+        {
+          "name": "Core tests and complete iOS build",
+          "env": {
+            "BUILD_STAGE": "${{ inputs.stage }}"
+          },
+          "run": "python3 tools/ios-ci/build.py --stage \"$BUILD_STAGE\""
+        },
+        {
+          "name": "Keep build evidence",
+          "if": "always()",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "with": {
+            "name": "apple-nojit-build-evidence",
+            "path": "apple-build-results/",
+            "retention-days": 3,
+            "if-no-files-found": "warn"
+          }
+        }
+      ]
+    }
+  }
+}
