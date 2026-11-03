@@ -1,6 +1,6 @@
 # Native iOS no-JIT host candidate
 
-Candidate 0.3.0 build 4, separate bundle `dev.somjs.deadspacelegacy.nojithost`.
+Candidate 0.3.0 build 5, separate bundle `dev.somjs.deadspacelegacy.nojithost`.
 This is the complete interpreter HLE core with an SDL UIKit entry, not a new instruction probe.
 Source base: bd5b416e; CPU implementation: 315ef93e. PC and Android integration trees stay separate.
 
@@ -43,3 +43,13 @@ Core Animation composition, EAGL presentation and optional ES2 presentation all 
 current SDL UIKit framebuffer. Native color-renderbuffer binding is restored after swap.
 The packaging audit checks all 18 declared fonts and 9 guest support libraries before compiling.
 Simulator acceptance now also rejects an all-black image and retains textual startup logs.
+
+Build 4 passed compilation and a coarse nonblack check, but manual screenshot review
+rejected its white surface with a gray cursor. The composited 320x480 texture still
+used default REPEAT wrapping. APPLE_texture_2D_limited_npot specifies that this makes
+NPOT sampling act untextured. Build 5 sets both axes to CLAMP_TO_EDGE and checks the
+composition FBO. Screenshot acceptance requires visible chromatic content, not only
+a nonblack surface. The iOS BGRA upload path also follows Apple's RGBA-internal rule.
+References:
+- https://registry.khronos.org/OpenGL/extensions/APPLE/APPLE_texture_2D_limited_npot.txt
+- https://registry.khronos.org/OpenGL/extensions/APPLE/APPLE_texture_format_BGRA8888.txt

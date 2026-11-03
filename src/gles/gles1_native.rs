@@ -98,6 +98,15 @@ impl GLESContext for GLES1NativeContext {
         self.is_loaded = true;
         if !self.pvrtc_native_checked {
             self.pvrtc_native = unsafe { detect_pvrtc_support() };
+            #[cfg(target_os = "ios")]
+            unsafe {
+                let p = gles11::GetString(gles11::EXTENSIONS);
+                if !p.is_null() {
+                    let extensions = CStr::from_ptr(p.cast()).to_string_lossy();
+                    let has = |name: &str| extensions.split_whitespace().any(|e| e == name);
+                    log!("[IOSHost] GLES1 capabilities: full_npot={} apple_limited_npot={} apple_bgra={}", has("GL_OES_texture_npot"), has("GL_APPLE_texture_2D_limited_npot"), has("GL_APPLE_texture_format_BGRA8888"));
+                }
+            }
             self.pvrtc_native_checked = true;
             log!(
                 "GLES1Native: GL_IMG_texture_compression_pvrtc {} (PVRTC textures will \
@@ -1779,7 +1788,13 @@ impl GLES for GLES1Native<'_> {
         pixels: *const GLvoid,
     ) {
         if format == gles11::BGRA_EXT {
-            internalformat = gles11::BGRA_EXT as GLint
+            // APPLE_texture_format_BGRA8888 requires RGBA internally;
+            // Other hosts retain their existing BGRA-internal path.
+            internalformat = if cfg!(target_os = "ios") {
+                gles11::RGBA as GLint
+            } else {
+                gles11::BGRA_EXT as GLint
+            };
         }
         gles11::TexImage2D(
             target,

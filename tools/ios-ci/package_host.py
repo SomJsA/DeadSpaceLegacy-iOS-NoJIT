@@ -10,7 +10,7 @@ import struct
 import zipfile
 
 VERSION='0.3.0'
-BUILD='4'
+BUILD='5'
 BUNDLE_ID='dev.somjs.deadspacelegacy.nojithost'
 
 def audit_resources(root):

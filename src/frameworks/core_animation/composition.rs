@@ -216,6 +216,12 @@ pub fn recomposite_if_necessary(env: &mut Environment, force: bool) -> Option<In
                 gles11::LINEAR as _,
             );
 
+            // APPLE_texture_2D_limited_npot treats an NPOT texture using
+            // REPEAT as incomplete, so sampling it behaves as untextured.
+            // The composited screen is commonly 320x480, not power-of-two.
+            gles.TexParameteri(gles11::TEXTURE_2D, gles11::TEXTURE_WRAP_S, gles11::CLAMP_TO_EDGE as _);
+            gles.TexParameteri(gles11::TEXTURE_2D, gles11::TEXTURE_WRAP_T, gles11::CLAMP_TO_EDGE as _);
+
             gles.GenFramebuffersOES(1, &mut framebuffer);
             gles.BindFramebufferOES(gles11::FRAMEBUFFER_OES, framebuffer);
             gles.FramebufferTexture2DOES(
@@ -229,7 +235,11 @@ pub fn recomposite_if_necessary(env: &mut Environment, force: bool) -> Option<In
             // ХАК: Убраны вызовы assert_eq!, которые убивали приложение
             // при ошибках GL (типа GL_OUT_OF_MEMORY = 1285)
             let _ = gles.GetError(); // Просто сбрасываем флаг текущей ошибки, чтобы он не висел
-            let _ = gles.CheckFramebufferStatusOES(gles11::FRAMEBUFFER_OES); // Проверяем, но не крашимся
+            let status = gles.CheckFramebufferStatusOES(gles11::FRAMEBUFFER_OES);
+            #[cfg(target_os = "ios")]
+            assert_eq!(status, gles11::FRAMEBUFFER_COMPLETE_OES, "iOS composition framebuffer incomplete: {status:#x}");
+            #[cfg(target_os = "ios")]
+            log!("[IOSHost] composition texture {}x{} uses CLAMP_TO_EDGE; FBO={:#x}", fb_width, fb_height, status);
         }
         env.framework_state
             .core_animation
