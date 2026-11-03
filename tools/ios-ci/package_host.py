@@ -61,6 +61,7 @@ def package(root,binary,simulator=False):
           'CFBundleSupportedPlatforms':['iPhoneSimulator' if simulator else 'iPhoneOS'],
           'LSRequiresIPhoneOS':True,'MinimumOSVersion':'15.0','UIDeviceFamily':[2],
           'UIFileSharingEnabled':True,'LSSupportsOpeningDocumentsInPlace':True,
+          'NSMotionUsageDescription':'Use device tilt as accelerometer input for the legacy game.',
           'UILaunchScreen':{},'UIRequiresFullScreen':True,
           'UISupportedInterfaceOrientations~ipad':['UIInterfaceOrientationPortrait','UIInterfaceOrientationPortraitUpsideDown','UIInterfaceOrientationLandscapeLeft','UIInterfaceOrientationLandscapeRight']}
     (app/'Info.plist').write_bytes(plistlib.dumps(info,sort_keys=True))

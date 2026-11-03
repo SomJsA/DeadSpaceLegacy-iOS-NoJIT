@@ -1,10 +1,10 @@
 {
   "source_tree": "E:\\CodexProjects\\DeadSpaceLegacy\\work\\HyperHLE_ds_compat-ios-native-host-20261103",
-  "source_head": "432b73a176674db8fd5262574217b6855df8af2a",
+  "source_head": "af0370f5df00926abbb1908a51260ec7c22e40d4",
   "cpu_implementation_commit": "315ef93eb37d975869bb8bd92a66735eb9742aa1",
   "purpose": "Private Apple SDK build of complete no-JIT core; no game data, saves, signing credentials or accounts exported",
   "files": 745,
-  "bytes": 53461480,
+  "bytes": 53462189,
   "contains_game_ipa": false,
   "public_dependencies_fetched_by_ci": [
     "SDL release-2.26.4",
@@ -13,7 +13,7 @@
     "stb 9f1776a"
   ],
   "sha256": {
-    ".github/workflows/ios-host.yml": "dd2982016333fc8c51a2713494b9a8dc285aae702eec90f92b8f99500b8f344d",
+    ".github/workflows/ios-host.yml": "67b86a0085300d12c77050b128a1ac0aecae4e663912c1024ff9d59b45254c5c",
     ".gitignore": "35545a1a9c71560afdc6a671eee95b8ede111eceb0f40e592a8c288f1510a006",
     "Cargo.lock": "fd4f4ab848c9bea1f74efa97fa4e043dc909ae4a56c1915b659afca63a2d5857",
     "Cargo.toml": "23b0efdf6aef4f6a18768e93d693fc23b307e767aa002e9b9ae08df13724e63b",
@@ -578,12 +578,12 @@
     "tests/make-ipa.sh": "0fbd07fb87333dd75e614178b3c5f1e828f9483009cf66aea2a128887b957b6f",
     "tools/ios-ci/BUDGET.json": "62fb550b1c34f9f3d77d226055359b3b11f8047c3bda34ea1a32a79b20e08873",
     "tools/ios-ci/Toolchain.cmake": "a37fc90ec4261ac82ba7fe3775c513695a9cc8759b69ac9f2409c10bba891d6e",
-    "tools/ios-ci/build.py": "066f8d63011f9596c6fa80c06513743cea61cc42cb65fda4d1cdf04120668ad1",
+    "tools/ios-ci/build.py": "026150d645109574bc9a6037d97a33d91074ccab1844de8826c48f702ddff535",
     "tools/ios-ci/fetch-public.py": "1d2aae842348e42c61530863eac5ebc934ba97c510b58e9ee8a41f2ac1efb87e",
-    "tools/ios-ci/package_host.py": "dc0b19a2b7426e62129911247d27dc2c7d84eca25f04e840d6810c7058d57cc9",
+    "tools/ios-ci/package_host.py": "09dc9ae96937e1feb482b8e6626dca348c4f2d6c1cc867d1fef8ab53ecbfb9ac",
     "tools/ios-ci/resource-cache-tests/Cargo.lock": "8ff2c19818bc1d5a246646354c8874772a5a5069cc21360f24d909d88698ab21",
     "tools/ios-ci/resource-cache-tests/Cargo.toml": "6725f1e417e6224d29ca4d2f3c2c20d66dd960458b1f8365e26e76ace8ad9587",
-    "tools/ios-ci/simulator_smoke.py": "6d3793273f19b7d6035f44379c10d4e40b6127ecf6184524113341a0a8927d2b",
+    "tools/ios-ci/simulator_smoke.py": "aa449b43884e2553309a32179f8ff47651acb278c3477e20f55718c98fb64b27",
     "tools/pc-runtime/assets/input-prompts/License-Kenney.txt": "b99a8006957f596f604628d6f2c782a5533a07e557786f0729373660ef17ec2a",
     "tools/pc-runtime/assets/input-prompts/atlas.json": "db1c394974f19425547958dd476365747bfbf69834936a9d54174a2887ed4aba",
     "tools/pc-runtime/assets/input-prompts/atlas.png": "aee89a3a95f9b8e78a8f071094e15fe54022b72401c20606b70ba5bda4117436",

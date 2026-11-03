@@ -27,7 +27,7 @@ def run(args, label, env=None, cwd=ROOT):
     return result
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--stage', choices=['check', 'device-library', 'integrated'], default='check')
+parser.add_argument('--stage', choices=['check', 'device-library', 'integrated', 'simulator'], default='check')
 args = parser.parse_args()
 if sys.platform != 'darwin':
     raise SystemExit('This stage requires real macOS with Xcode and the Apple iOS SDK.')
@@ -55,13 +55,17 @@ metadata = {'host':platform.platform(),'sdk':sdk,'deployment_target':'15.0',
 (OUT/'environment.json').write_text(json.dumps(metadata, indent=2)+'\n', encoding='utf-8')
 run(['rustc','-vV'], 'rust-version')
 run(['xcodebuild','-version'], 'xcode-version')
-run(['cargo','test','--release','--manifest-path','src/cpu/arm_interpreter/Cargo.toml'], 'portable-core-tests')
-if args.stage == 'integrated':
+if args.stage != 'simulator':
+    run(['cargo','test','--release','--manifest-path','src/cpu/arm_interpreter/Cargo.toml'], 'portable-core-tests')
+if args.stage in ('integrated','simulator'):
     from package_host import package
     from simulator_smoke import smoke
-    run(['cargo','test','--locked','--manifest-path','tools/ios-ci/resource-cache-tests/Cargo.toml'], 'resource-cache-tests')
+    if args.stage == 'integrated':
+        run(['cargo','test','--locked','--manifest-path','tools/ios-ci/resource-cache-tests/Cargo.toml'], 'resource-cache-tests')
     env['CARGO_BUILD_JOBS']='2'
     for target, sdk_name in [('aarch64-apple-ios','iphoneos'),('aarch64-apple-ios-sim','iphonesimulator')]:
+        if args.stage=='simulator' and sdk_name=='iphoneos':
+            continue
         active=env.copy()
         active['SDKROOT']=subprocess.check_output(['xcrun','--sdk',sdk_name,'--show-sdk-path'],text=True).strip()
         compiler=subprocess.check_output(['xcrun','--sdk',sdk_name,'--find','clang'],text=True).strip()
@@ -72,7 +76,11 @@ if args.stage == 'integrated':
              '--no-default-features','--features','static,cpu-interpreter'],target+'-full-host',active)
         app=package(ROOT,ROOT/'apple-target'/target/'ios-integration/touchHLE',target.endswith('-sim'))
         if target.endswith('-sim'):
-            smoke(ROOT,app)
+            try:
+                smoke(ROOT,app)
+            finally:
+                import shutil
+                shutil.make_archive(str(OUT/'simulator-app'),'zip',root_dir=app.parent,base_dir=app.name)
     print('Integrated device package and simulator launch checks complete; real iPad game execution is still pending.')
     raise SystemExit(0)
 cmd = ['cargo', 'check' if args.stage=='check' else 'build', '--locked', '--lib',

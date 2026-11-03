@@ -11,7 +11,8 @@
           "options": [
             "check",
             "device-library",
-            "integrated"
+            "integrated",
+            "simulator"
           ]
         }
       }
@@ -56,7 +57,7 @@
           "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
           "with": {
             "name": "apple-nojit-build-evidence",
-            "path": "apple-build-results/*.log\napple-build-results/*.json\napple-build-results/*.ipa\napple-build-results/*.png\napple-build-results/*.ips",
+            "path": "apple-build-results/*.log\napple-build-results/*.json\napple-build-results/*.ipa\napple-build-results/*.png\napple-build-results/*.ips\napple-build-results/*.txt\napple-build-results/*.zip",
             "retention-days": 3,
             "if-no-files-found": "warn"
           }

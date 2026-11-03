@@ -34,6 +34,9 @@ def smoke(root,app):
         log=container/'Documents/host-log.txt'
         text=log.read_text(encoding='utf-8',errors='replace') if log.is_file() else ''
         (out/'simulator-host-log.txt').write_text(text,encoding='utf-8')
+        print('=== SIMULATOR HOST LOG (bounded tail) ===',flush=True)
+        print(text[-16000:],flush=True)
+        print('=== END SIMULATOR HOST LOG ===',flush=True)
         cmd(['xcrun','simctl','io',udid,'screenshot',str(out/'simulator-app-picker.png')])
         result['host_log_written']=bool(text)
         result['interpreter_selected']='CPU backend: interpreter' in text
