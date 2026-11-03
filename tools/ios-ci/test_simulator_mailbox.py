@@ -34,3 +34,27 @@ with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
     assert record['last_guest_ack_sequence']==2
     assert inbox.read_text().startswith('3 probe')
 print('PASS: readiness survives snapshot reads; ordered down/up ACKs; timeout is explicit and does not overwrite an unacknowledged mailbox')
+
+# Capture must retain a file that the guest may still be writing.
+import hashlib,time
+from PIL import Image
+capture=ast.Module(body=[node for node in tree.body if isinstance(node,ast.FunctionDef) and node.name=='collect_drawables'],type_ignores=[])
+with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as folder:
+    base=Path(folder);dump=base/'reference';full=base/'full';out=base/'out'
+    for p in [dump,full,out]:p.mkdir()
+    for number in range(1,5):
+        target=full/f'present_{number:05d}_f{number:06d}.ppm'
+        Image.new('RGB',(16,12),(number,40,80)).save(target)
+        os.utime(target,(time.time()-2,time.time()-2) if number==1 else (time.time()+10,time.time()+10))
+    record={'profile':'android-default'};frames=[];saved=set()
+    scope=dict(OUT=out,dump_dir=dump,all_dump_dir=full,frame_bytes=0,record=record,frame_records=frames,saved_frames=saved,time=time,started=time.time(),Image=Image,sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest())
+    exec(compile(capture,'capture-helpers','exec'),scope)
+    scope['collect_drawables']();assert len(frames)==1
+    assert len(list(full.glob('*.ppm')))==3,'Unfinished files were discarded'
+    for p in full.glob('*.ppm'):os.utime(p,(time.time()-2,time.time()-2))
+    scope['collect_drawables']();assert len(frames)==4
+    assert {p['kind'] for p in frames}=={'native-present-with-corner-counter'}
+    for row in frames:
+        number=int(row['source'].split('_')[1])
+        with Image.open(out/'native-frames'/row['file']) as image:assert image.getpixel((0,0))==(number,40,80)
+print('PASS: full native-frame collection preserves pixels and retains in-progress files until complete')

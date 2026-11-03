@@ -49,6 +49,7 @@ def valid_command(text):
 record={'schema':1,'ci_run_id':os.environ.get('GITHUB_RUN_ID','local'),'native_build_run':RUN,'baseline':'android 9cb5f507','native_code_rebuilt':False,'game_present':False,'original_game_test':True,'test_scope':'startup, main menu and first controllable scene; not whole-game acceptance','physical_device_acceptance':False,'session':TAG,'phase':'preparing','observed_stage':'starting','last_control_sequence':0,'last_guest_sequence':0,'errors':[]}
 udid=None;container=None;log=None;inbox=None;started=time.time();snapshot=0;pid=None;log_offset=0;dump_dir=None
 recorder=None;recorder_log=None;events=[];frame_records=[];saved_frames=set();last_screen_touch=(0.5,0.5)
+all_dump_dir=None;frame_bytes=0
 record['profile']='android-default';record['input_ready']=False
 def new_log():
     global log_offset
@@ -61,22 +62,29 @@ def new_log():
     del events[:-350]
     return text
 def collect_drawables():
+    global frame_bytes
     if not dump_dir:return
     folder=OUT/'native-frames';folder.mkdir(exist_ok=True)
-    dumps=sorted(dump_dir.glob('*.ppm'),key=lambda p:p.stat().st_mtime)
+    sources=[dump_dir]+([all_dump_dir] if all_dump_dir else [])
+    dumps=sorted((p for source in sources for p in source.glob('*.ppm')),key=lambda p:p.stat().st_mtime)
     for ppm in dumps:
         identity=(record['profile'],ppm.name)
         if identity in saved_frames:continue
-        if len(frame_records)>=512:continue
         if time.time()-ppm.stat().st_mtime<.2:continue
+        if len(frame_records)>=50000 or frame_bytes>=1300*1024*1024:
+            record['native_frame_capture_truncated']=True;continue
         name=f"{record['profile']}-{ppm.stem}.png";target=folder/name
         try:
-            with Image.open(ppm) as image:image.save(target)
+            with Image.open(ppm) as image:image.save(target,compress_level=1)
         except OSError:continue # The guest may still be writing its newest dump.
         saved_frames.add(identity)
-        frame_records.append({'file':name,'source':ppm.name,'wall_seconds':round(time.time()-started,3),'sha256':sha(target),'bytes':target.stat().st_size})
-    for old in dumps[:-2]:
-        assert old.resolve().parent==dump_dir.resolve();old.unlink()
+        size=target.stat().st_size;frame_bytes+=size
+        frame_records.append({'file':name,'source':ppm.name,'kind':'native-present-with-corner-counter' if ppm.parent==all_dump_dir else 'unlabelled-120-present-reference','wall_seconds':round(time.time()-started,3),'sha256':sha(target),'bytes':size})
+    for source in sources:
+        old_files=sorted(source.glob('*.ppm'),key=lambda p:p.stat().st_mtime)[:-2]
+        for old in old_files:
+            if (record['profile'],old.name) in saved_frames or record.get('native_frame_capture_truncated'):
+                assert old.resolve().parent==source.resolve();old.unlink()
 def deliver(command):
     global last_screen_touch
     record['last_guest_sequence']+=1;number=record['last_guest_sequence']
@@ -106,10 +114,17 @@ def publish(label):
     global snapshot
     snapshot+=1
     png=OUT/f'game-{snapshot:03d}.png';jpg=OUT/'latest-preview.jpg'
-    sim('io',udid,'screenshot',str(png),timeout=30)
+    # recordVideo and live simctl screenshot/spawn can block each other on the
+    # headless display service. Preview the guest pixels while the OS video runs.
+    collect_drawables()
+    latest_dump=max(dump_dir.glob('*.ppm'),key=lambda p:p.stat().st_mtime,default=None) if dump_dir else None
+    if latest_dump:
+        with Image.open(latest_dump) as im:im.convert('RGB').save(png)
+        record['preview_source']='native guest drawable; OS window is in the continuous video'
+    else:
+        Image.new('RGB',(320,480)).save(png);record['preview_source']='waiting for first guest drawable'
     with Image.open(png) as im:
         im=im.convert('RGB');im.thumbnail((1568,1568));im.save(jpg,quality=80)
-        if jpg.stat().st_size>350000:im.thumbnail((1200,1200));im.save(jpg,quality=70)
     collect_drawables();optional=[]
     if dump_dir:
         dumps=sorted(dump_dir.glob('*.ppm'),key=lambda p:p.stat().st_mtime)
@@ -122,10 +137,10 @@ def publish(label):
             atomic_json(OUT/'drawable-stats.json',stats);record['drawable']=stats
             optional=[OUT/'drawable-preview.jpg',OUT/'drawable-stats.json']
     record.update(snapshot=snapshot,label=label,wall_seconds=round(time.time()-started,2),screenshot_sha256=sha(png),preview_sha256=sha(jpg),preview_bytes=jpg.stat().st_size,log_bytes=log.stat().st_size if log and log.is_file() else 0)
-    processes=sim('spawn',udid,'launchctl','list',timeout=20)
-    record['process_alive']=any(BUNDLE in line and line.split()[0].isdigit() for line in processes.splitlines() if line.split())
+    record['process_alive']=False
     if pid:
         value=call(['ps','-p',str(pid),'-o','rss='],check=False)
+        record['process_alive']=value.strip().isdigit()
         record['simulator_process_rss_kib']=value.strip()
     (OUT/'host-log-tail.txt').write_text(tail(log),encoding='utf-8')
     new_log();(OUT/'diagnostic-events.txt').write_text('\n'.join(events)+'\n',encoding='utf-8')
@@ -181,8 +196,13 @@ try:
     target=docs/'DeadSpace.ipa';assert not target.exists();shutil.copy2(game,target);assert sha(target)==EXPECTED
     inbox=docs/'simulator-touch-inbox.txt';inbox.write_text('0 mark\n',encoding='utf-8');log=docs/'host-log.txt'
     dump_dir=docs/'drawable-dumps';dump_dir.mkdir()
+    all_dump_dir=docs/'present-dumps';all_dump_dir.mkdir()
     safe_env['SIMCTL_CHILD_TOUCHHLE_DS_CONTROL_INBOX']=str(inbox)
     safe_env['SIMCTL_CHILD_TOUCHHLE_DUMP_FRAMES']=str(dump_dir)
+    safe_env['SIMCTL_CHILD_TOUCHHLE_DS_DUMP_FRAMES']=str(all_dump_dir)
+    safe_env['SIMCTL_CHILD_TOUCHHLE_DS_DUMP_AT_PRESENT']='1'
+    safe_env['SIMCTL_CHILD_TOUCHHLE_DS_DUMP_FRAME_EVERY']='1'
+    record['native_frame_capture']='each native present; diagnostic corner counter, plus unlabelled reference every 120 presents'
     safe_env['SIMCTL_CHILD_TOUCHHLE_DS_TOUCH_LOG']='1'
     record['diagnostic_readback_enabled']=True
     video=OUT/f'game-video-{record["ci_run_id"]}.mp4';recorder_log=(OUT/'video-recorder.txt').open('wb')
@@ -263,7 +283,7 @@ finally:
         if frame_records:
             frames_zip=OUT/f'native-frames-{record["ci_run_id"]}.zip'
             with zipfile.ZipFile(frames_zip,'w',zipfile.ZIP_STORED) as archive:
-                archive.writestr('frames.json',json.dumps({'native_size':'guest drawable; orientation preserved','sample_interval_native_presents':120,'frames':frame_records},indent=2))
+                archive.writestr('frames.json',json.dumps({'native_size':'guest drawable; orientation preserved','full_sequence_interval_native_presents':1,'full_sequence_has_diagnostic_corner_counter':True,'unlabelled_reference_interval_native_presents':120,'truncated':record.get('native_frame_capture_truncated',False),'frames':frame_records},indent=2))
                 for frame in frame_records:archive.write(OUT/'native-frames'/frame['file'],frame['file'])
             record['native_frames']={'asset':frames_zip.name,'count':len(frame_records),'bytes':frames_zip.stat().st_size,'sha256':sha(frames_zip)}
             try:gh('release','upload',TAG,str(frames_zip),'--repo',REPO,timeout=90)
