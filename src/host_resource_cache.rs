@@ -170,3 +170,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "ios_resource_location.rs"]
+mod ios_resource_location;

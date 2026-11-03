@@ -25,6 +25,10 @@ use std::borrow::Cow;
 use std::io::{Read, Seek};
 use std::path::{Path, PathBuf};
 
+#[cfg(target_os = "ios")]
+#[path = "ios_resource_location.rs"]
+mod ios_resource_location;
+
 // Keep this at module scope so cargo test discovers the isolation regressions.
 #[cfg(not(target_os = "android"))]
 #[path = "ds_data_root.rs"]
@@ -75,9 +79,14 @@ impl ResourceFile {
             // On other OSes, resources are accessed as ordinary files.
             #[cfg(not(target_os = "android"))]
             file: {
-                let base_path = get_macos_bundled_resources_path();
-                // When not in a bundle, look in the current directory.
-                let path = base_path.as_deref().unwrap_or(Path::new(".")).join(path);
+                #[cfg(target_os = "ios")]
+                let path = ios_resource_location::resolve(
+                    std::env::var_os("TOUCHHLE_IOS_RESOURCES_DIR").as_deref(), path)?;
+                #[cfg(not(target_os = "ios"))]
+                let path = {
+                    let base_path = get_macos_bundled_resources_path();
+                    base_path.as_deref().unwrap_or(Path::new(".")).join(path)
+                };
                 std::fs::File::open(path).map_err(|e| e.to_string())?
             },
         })

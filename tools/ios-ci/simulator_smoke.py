@@ -38,10 +38,25 @@ def smoke(root,app):
         print(text[-16000:],flush=True)
         print('=== END SIMULATOR HOST LOG ===',flush=True)
         cmd(['xcrun','simctl','io',udid,'screenshot',str(out/'simulator-app-picker.png')])
+        try:
+            from PIL import Image
+        except ImportError:
+            import sys
+            target=root/'.ci-image-qa'
+            cmd([sys.executable,'-m','pip','install','--quiet','--target',str(target),'Pillow==12.0.0'])
+            sys.path.insert(0,str(target))
+            from PIL import Image
+        with Image.open(out/'simulator-app-picker.png') as screenshot:
+            pixels=screenshot.convert('RGB');pixels.thumbnail((96,144))
+            samples=list(pixels.getdata());count=len(samples)
+            result['image_nonblack_fraction']=sum(max(p)>8 for p in samples)/count
+            result['image_bright_fraction']=sum(max(p)>96 for p in samples)/count
+            result['image_distinct_colors']=len(set(samples))
+            result['visible_ui']=result['image_nonblack_fraction']>0.005 and result['image_bright_fraction']>0.0005 and result['image_distinct_colors']>=8
         result['host_log_written']=bool(text)
         result['interpreter_selected']='CPU backend: interpreter' in text
         result['error_in_log']=any(word in text for word in ['[IOSHost] core failed:','[IOSHost] panic caught','[IOSHost] setup failed:','panicked at'])
-        if not result['host_log_written'] or result['error_in_log'] or not result['process_alive']:
+        if not result['host_log_written'] or result['error_in_log'] or not result['process_alive'] or not result['visible_ui']:
             raise RuntimeError('Simulator host reported a startup failure; see simulator-host-log.txt')
     finally:
         crash_dir=Path.home()/'Library/Logs/DiagnosticReports'

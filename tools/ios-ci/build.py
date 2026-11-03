@@ -58,8 +58,9 @@ run(['xcodebuild','-version'], 'xcode-version')
 if args.stage != 'simulator':
     run(['cargo','test','--release','--manifest-path','src/cpu/arm_interpreter/Cargo.toml'], 'portable-core-tests')
 if args.stage in ('integrated','simulator'):
-    from package_host import package
+    from package_host import package, audit_resources
     from simulator_smoke import smoke
+    audit_resources(ROOT)
     if args.stage == 'integrated':
         run(['cargo','test','--locked','--manifest-path','tools/ios-ci/resource-cache-tests/Cargo.toml'], 'resource-cache-tests')
     env['CARGO_BUILD_JOBS']='2'

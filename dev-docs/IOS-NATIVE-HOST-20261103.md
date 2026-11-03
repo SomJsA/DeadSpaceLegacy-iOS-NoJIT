@@ -1,6 +1,6 @@
 # Native iOS no-JIT host candidate
 
-Candidate 0.3.0 build 3, separate bundle `dev.somjs.deadspacelegacy.nojithost`.
+Candidate 0.3.0 build 4, separate bundle `dev.somjs.deadspacelegacy.nojithost`.
 This is the complete interpreter HLE core with an SDL UIKit entry, not a new instruction probe.
 Source base: bd5b416e; CPU implementation: 315ef93e. PC and Android integration trees stay separate.
 
@@ -31,3 +31,15 @@ play, audio, touch, saves, lifecycle, performance or physical memory pressure wi
 CI policy: private repository; manual dispatch only; standard macos-15; one job; 20-minute cap;
 no automatic retries; included allowance only. User confirmed stop-on-excess and no payment method.
 Group changes locally and run one integrated build to conserve the free allowance.
+
+## Startup integration fixes
+
+SDK builds and an actual simulator run exposed SDLUIKitDelegate resetting cwd to the
+.app resource path after initialize(). The support archive was complete; relative font
+lookups were therefore wrong. iOS ResourceFile now resolves against the configured absolute
+resource cache; the SDL callback also restores cwd for the remaining legacy file paths.
+The regression actually changes cwd and reads the intended cached font. Cache/path tests: 7.
+Core Animation composition, EAGL presentation and optional ES2 presentation all select the
+current SDL UIKit framebuffer. Native color-renderbuffer binding is restored after swap.
+The packaging audit checks all 18 declared fonts and 9 guest support libraries before compiling.
+Simulator acceptance now also rejects an all-black image and retains textual startup logs.

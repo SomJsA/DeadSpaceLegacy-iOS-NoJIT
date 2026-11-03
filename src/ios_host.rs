@@ -63,6 +63,7 @@ fn initialize() -> Result<PathBuf, String> {
         .ok_or("Documents has no parent")?
         .join("Library");
     let resources = crate::host_resource_cache::prepare(base, &library)?;
+    std::env::set_var("TOUCHHLE_IOS_RESOURCES_DIR", &resources);
     std::env::set_current_dir(&resources).map_err(|e| e.to_string())?;
     std::fs::create_dir_all(docs.join("touchHLE_apps")).map_err(|e| e.to_string())?;
     eprintln!("\n[IOSHost] full HLE host 0.3.0 / interpreter / no JIT");
@@ -86,6 +87,11 @@ fn initialize() -> Result<PathBuf, String> {
 unsafe extern "C" fn run_core(_: i32, _: *mut *mut c_char) -> i32 {
     let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         let docs = documents()?;
+        // SDLUIKitDelegate resets cwd after initialize(), before this callback.
+        let resources = std::env::var_os("TOUCHHLE_IOS_RESOURCES_DIR")
+            .ok_or("iOS host resource directory is missing after SDL launch")?;
+        std::env::set_current_dir(&resources).map_err(|e| e.to_string())?;
+        eprintln!("[IOSHost] resource directory restored after SDL UIKit bootstrap");
         let game = docs.join("DeadSpace.ipa");
         let mut args = vec!["DSNoJITHost".to_owned()];
         if game.is_file() {

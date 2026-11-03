@@ -387,7 +387,7 @@ pub fn recomposite_if_necessary(env: &mut Environment, force: bool) -> Option<In
     // default framebuffer (0) so we need to unbind our internal framebuffer.
     unsafe {
         gles.BindTexture(gles11::TEXTURE_2D, texture);
-        gles.BindFramebufferOES(gles11::FRAMEBUFFER_OES, 0);
+        gles.BindFramebufferOES(gles11::FRAMEBUFFER_OES, crate::window::host_default_framebuffer());
         present_frame(
             gles.as_mut(),
             present_frame_args.0,

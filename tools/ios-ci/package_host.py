@@ -3,14 +3,33 @@ from pathlib import Path
 import hashlib
 import json
 import plistlib
+import re
 import shutil
 import stat
 import struct
 import zipfile
 
 VERSION='0.3.0'
-BUILD='3'
+BUILD='4'
 BUNDLE_ID='dev.somjs.deadspacelegacy.nojithost'
+
+def audit_resources(root):
+    root=Path(root)
+    font_names=sorted(set(re.findall(r'Self::from_resource_file\("([^"\n]+)"\)',(root/'src/font.rs').read_text(encoding='utf-8'))))
+    for name in font_names:
+        file=root/'touchHLE_fonts'/name
+        assert file.is_file(), 'Required HLE font missing: '+name
+        with file.open('rb') as stream:magic=stream.read(4)
+        assert magic in (b'\x00\x01\x00\x00',b'OTTO',b'ttcf'), 'Invalid font header: '+name
+    dylibs=sorted((root/'touchHLE_dylibs').glob('*.dylib'))
+    assert dylibs
+    for file in dylibs:
+        with file.open('rb') as stream:magic=stream.read(4)
+        assert magic in (b'\xce\xfa\xed\xfe',b'\xca\xfe\xba\xbe',b'\xbe\xba\xfe\xca'), 'Invalid guest support library: '+file.name
+    result={'required_fonts':font_names,'fonts_checked':len(font_names),'support_libraries_checked':len(dylibs),'status':'passed'}
+    out=root/'apple-build-results';out.mkdir(exist_ok=True)
+    (out/'resource-audit.json').write_text(json.dumps(result,indent=2)+'\n',encoding='utf-8')
+    return result
 
 def inspect_macho(path, simulator=False):
     b=Path(path).read_bytes()
@@ -62,6 +81,7 @@ def package(root,binary,simulator=False):
           'LSRequiresIPhoneOS':True,'MinimumOSVersion':'15.0','UIDeviceFamily':[2],
           'UIFileSharingEnabled':True,'LSSupportsOpeningDocumentsInPlace':True,
           'NSMotionUsageDescription':'Use device tilt as accelerometer input for the legacy game.',
+          'UIApplicationSupportsIndirectInputEvents':True,
           'UILaunchScreen':{},'UIRequiresFullScreen':True,
           'UISupportedInterfaceOrientations~ipad':['UIInterfaceOrientationPortrait','UIInterfaceOrientationPortraitUpsideDown','UIInterfaceOrientationLandscapeLeft','UIInterfaceOrientationLandscapeRight']}
     (app/'Info.plist').write_bytes(plistlib.dumps(info,sort_keys=True))
