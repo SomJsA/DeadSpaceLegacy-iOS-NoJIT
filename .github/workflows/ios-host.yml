@@ -12,14 +12,22 @@
             "check",
             "device-library",
             "integrated",
-            "simulator"
+            "simulator",
+            "review-image"
           ]
+        },
+        "artifact_run": {
+          "description": "Existing compiled artifact for validation-only review",
+          "required": false,
+          "type": "string",
+          "default": "41614604627"
         }
       }
     }
   },
   "permissions": {
-    "contents": "read"
+    "contents": "read",
+    "actions": "read"
   },
   "concurrency": {
     "group": "ios-native-nojit",
@@ -27,7 +35,7 @@
   },
   "jobs": {
     "apple": {
-      "runs-on": "macos-15",
+      "runs-on": "${{ inputs.stage == 'review-image' && 'ubuntu-latest' || 'macos-15' }}",
       "timeout-minutes": 20,
       "steps": [
         {
@@ -38,18 +46,30 @@
         },
         {
           "name": "Fetch pinned public native dependencies",
-          "run": "python3 tools/ios-ci/fetch-public.py"
+          "run": "python3 tools/ios-ci/fetch-public.py",
+          "if": "${{ inputs.stage != 'review-image' }}"
         },
         {
           "name": "Install build tools",
-          "run": "command -v cmake >/dev/null || brew install cmake\ncommand -v ninja >/dev/null || brew install ninja\nrustup toolchain install 1.99.0 --profile minimal\nrustup default 1.99.0\nrustup target add aarch64-apple-ios aarch64-apple-ios-sim"
+          "run": "command -v cmake >/dev/null || brew install cmake\ncommand -v ninja >/dev/null || brew install ninja\nrustup toolchain install 1.99.0 --profile minimal\nrustup default 1.99.0\nrustup target add aarch64-apple-ios aarch64-apple-ios-sim",
+          "if": "${{ inputs.stage != 'review-image' }}"
         },
         {
           "name": "Core tests and complete iOS build",
           "env": {
             "BUILD_STAGE": "${{ inputs.stage }}"
           },
-          "run": "python3 tools/ios-ci/build.py --stage \"$BUILD_STAGE\""
+          "run": "python3 tools/ios-ci/build.py --stage \"$BUILD_STAGE\"",
+          "if": "${{ inputs.stage != 'review-image' }}"
+        },
+        {
+          "name": "Validate existing native artifact without Mac rebuild",
+          "if": "${{ inputs.stage == 'review-image' }}",
+          "env": {
+            "GH_TOKEN": "${{ github.token }}",
+            "NATIVE_ARTIFACT_RUN": "${{ inputs.artifact_run }}"
+          },
+          "run": "python3 -m venv .qa-venv\n.qa-venv/bin/python -m pip install --quiet Pillow==12.0.0\n.qa-venv/bin/python tools/ios-ci/review_existing.py"
         },
         {
           "name": "Keep build evidence",

@@ -1,16 +1,16 @@
 {
   "source_tree": "E:\\CodexProjects\\DeadSpaceLegacy\\work\\HyperHLE_ds_compat-ios-android-base-20261103",
-  "source_head": "ab82323bee2802e6216089c885d5a128ad533444",
+  "source_head": "7e141c6792d5e1885c276862585522e9a85b3054",
   "baseline_platform": "android",
   "android_baseline_commit": "9cb5f50775a590c639aabf47907845f06b300e88",
   "cpu_implementation_commit": "315ef93eb37d975869bb8bd92a66735eb9742aa1",
   "purpose": "Private real Apple SDK build of the Android-derived no-JIT host",
   "contains_game_ipa": false,
   "contains_user_options": false,
-  "files": 722,
-  "bytes": 63663152,
+  "files": 724,
+  "bytes": 63668971,
   "sha256": {
-    ".github/workflows/ios-host.yml": "67b86a0085300d12c77050b128a1ac0aecae4e663912c1024ff9d59b45254c5c",
+    ".github/workflows/ios-host.yml": "4a9b5964bbc96b646b6d1639e779b51fe076d5fb7b9e618f55f949cb526cd0ad",
     ".gitignore": "f33dc2210e4b6abb82ce107f72c03dfdfc477d9c9269f1dcc2bf4edb1d1fe260",
     "Cargo.lock": "cd2241bd03e1d17ce946eab1e20c19b67ced499078d601e9e9371997fac3d801",
     "Cargo.toml": "c8a3939c9c8c79a71beada58c4f6ff14d9aaef00769e9a1d2d64ffbaaa217578",
@@ -563,7 +563,7 @@
     "tools/ios-ci/package_host.py": "2f182ed7b3033a12eaafeb371c9314dd00b750111377cc2d1a4771bbc624c135",
     "tools/ios-ci/resource-cache-tests/Cargo.lock": "8ff2c19818bc1d5a246646354c8874772a5a5069cc21360f24d909d88698ab21",
     "tools/ios-ci/resource-cache-tests/Cargo.toml": "6725f1e417e6224d29ca4d2f3c2c20d66dd960458b1f8365e26e76ace8ad9587",
-    "tools/ios-ci/simulator_smoke.py": "2f019e5d74607db8ec42c82d920f18a9f4b53e5a3f16eded2bb0e002d5bb2f52",
+    "tools/ios-ci/simulator_smoke.py": "eaaf64a741204bf20063a0cebcd578136585b0e2dff9fd56901ce1a5f9d5ec7b",
     "touchHLE_default_options.txt": "833fc10ec90dd61973d54325727117be3f28c9b1d9b97e874ffa8d00274da1b6",
     "touchHLE_ds_fonts/SweiShearSansCJKsc-Medium.ttf": "68d4cd6dc08790757315bd4ca00834bd62a836dc9370ef7d0b2557068e1d0868",
     "touchHLE_dylibs/COPYING.libgcc": "e55f40e907647a4ae74b6f9cf10dd72ac9996c5d2b227d8e226e7154a85b531d",
@@ -731,6 +731,10 @@
     "vendor/PVRTDecompress/LICENSE.md": "6c631fcb8d3cc74842aeaa3d907c89920bebdc4e7cc066752a95f6cdb249f511",
     "vendor/PVRTDecompress/PVRTDecompress.cpp": "efb35f85890faf5ee6bbb01303a752fd9f43fe807dad3fd2a2a672edffd45f26",
     "vendor/PVRTDecompress/PVRTDecompress.h": "ce6b277b4accac1bf25329f40b9be12694ed260b3a274649127e1510d59b4745",
-    "vendor/PVRTDecompress/README.md": "d3364829e27c2200320af3e99aaf9b61ce20f5a68763e8dafae932ac2da393cd"
-  }
+    "vendor/PVRTDecompress/README.md": "d3364829e27c2200320af3e99aaf9b61ce20f5a68763e8dafae932ac2da393cd",
+    "tools/ios-ci/setup_image_qa.py": "ed6c65e191cd32aafe3634a924de5b60bef68bb764860c22666a6dfffcf378bd",
+    "tools/ios-ci/review_existing.py": "2468120387c9399c923c554fc6066ad44e00d555cad2fcf91056088d1fb70823"
+  },
+  "native_artifact_source_commit": "ab82323bee2802e6216089c885d5a128ad533444",
+  "validation_only_change": true
 }

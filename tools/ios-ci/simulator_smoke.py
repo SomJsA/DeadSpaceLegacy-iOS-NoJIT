@@ -53,7 +53,9 @@ def smoke(root,app):
             result['image_bright_fraction']=sum(max(p)>96 for p in samples)/count
             result['image_distinct_colors']=len(set(samples))
             result['image_chromatic_fraction']=sum(max(p)-min(p)>24 and max(p)>64 for p in samples)/count
-            result['visible_ui']=result['image_nonblack_fraction']>0.005 and result['image_bright_fraction']>0.0005 and result['image_distinct_colors']>=8 and result['image_chromatic_fraction']>0.0005
+            from setup_image_qa import assess
+            result['image_contract']=assess(out/'simulator-mobile-setup.png')
+            result['visible_ui']=result['image_contract']['accepted']
         result['mobile_setup_ready']='mobile-landing-ready; Android baseline; desktop mappings disabled' in text
         result['host_log_written']=bool(text)
         result['interpreter_selected']='CPU backend: interpreter' in text
