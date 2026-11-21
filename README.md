@@ -1,3 +1,16 @@
+# Dead Space Mobile iOS 实验归档
+
+这是 Dead Space Mobile 基于 Android 集成线的 iPad ARM64 免 JIT 宿主实验。**iOS 开发已暂停，在有大佬愿意借一台 Mac 给我们调试之前，无法继续推进。**
+
+- [iOS 0.4.2 错误百出的实验预发布](https://github.com/SomJsA/DeadSpaceLegacy-iOS-NoJIT/releases/tag/ios-v0.4.2-experimental) 提供未签名的宿主 IPA、校验值和已知问题。
+- 模拟器实测到第一章移动教程及触控视角响应。完整流程、可听音频、性能与 iPad 真机仍待验证。
+- 此分支保留 Android 基线的后续诊断源码。与附件对应的构建输入见 [0.4.2 源码 tag](https://github.com/SomJsA/DeadSpaceLegacy-iOS-NoJIT/tree/ios-v0.4.2-experimental)。
+- [Dead Space Mobile Community](https://github.com/SomJsA/DeadSpaceMobile-Community) 汇总各平台源码与发布入口。
+
+This is the archived Android-based no-JIT iPad host experiment. **iOS development is paused until the community can lend us a Mac for debugging.** See the experimental release for the unsigned host IPA, validation scope, and known issues.
+
+---
+
 # HyperHLE
 
 **HyperHLE** is an independent fork of the touchHLE project. To avoid any confusion with the upstream repository, please review the key characteristics and context of this fork below.
